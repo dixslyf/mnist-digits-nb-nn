@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "assignment-2"
+version = "0.1.0"
+description = ""
+authors = ["Dixon Sean Low Yan Feng <dixonseanlow@protonmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+jupyterlab = "^4.2.3"
+torch = "^2.3.1"
+numpy = "^2.0.0"
+scipy = "^1.14.0"
+pandas = "^2.2.2"
+scikit-learn = "^1.5.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
