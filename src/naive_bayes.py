@@ -5,6 +5,7 @@
 
 import numpy as np
 
+
 class NaiveBayes:
     def __init__(self, smoothing_factor=1.0):
         """
@@ -33,7 +34,6 @@ class NaiveBayes:
 
         return class_probs
 
-
     def calculate_feature_probs(self, x_train, y_train):
         """
         Calculate the conditional probabilities for each feature given the class.
@@ -46,12 +46,11 @@ class NaiveBayes:
         feature_probs: Array of conditional probabilities for each feature and class.
         """
         num_classes = len(np.unique(y_train))
-        _ , num_features = x_train.shape
-        feature_probs = None # need to change the intialize
+        _, num_features = x_train.shape
+        feature_probs = None  # need to change the intialize
         "*** YOUR CODE HERE ***"
 
         return feature_probs
-
 
     def train(self, x_train, y_train):
         """
@@ -80,5 +79,3 @@ class NaiveBayes:
         "*** YOUR CODE HERE ***"
 
         return predictions
-
-

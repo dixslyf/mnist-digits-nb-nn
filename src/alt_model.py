@@ -5,10 +5,12 @@
 
 import torch.nn as nn
 
+
 class ALTModel(nn.Module):
     """
     A custom PyTorch model for your alternative neural network-based model.
     """
+
     def __init__(self):
         "*** YOUR CODE HERE ***"
         pass

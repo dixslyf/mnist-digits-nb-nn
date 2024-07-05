@@ -24,33 +24,34 @@ USAGE_STRING = """
 
 
 if __name__ == "__main__":
-  parser = ArgumentParser(USAGE_STRING)
-  parser.add_argument('-c', '--classifier', help='The type of classifier', choices=['nb', 'alt'], required=True)
-  parser.add_argument('-d', '--data_dir', help='the dataset folder name', type=str, required=True)
-  parser.add_argument('-m', '--mode', help='train, val or test', type=str, required=True)
-  parser.add_argument('-b', '--batch_size', help='batch size', type=int)
-  parser.add_argument('-e', '--epoch', help='number of epochs', type=int)
-  parser.add_argument('-l', '--learning_rate', help='learning rate', type=float)
-  args = parser.parse_args()
+    parser = ArgumentParser(USAGE_STRING)
+    parser.add_argument(
+        "-c",
+        "--classifier",
+        help="The type of classifier",
+        choices=["nb", "alt"],
+        required=True,
+    )
+    parser.add_argument(
+        "-d", "--data_dir", help="the dataset folder name", type=str, required=True
+    )
+    parser.add_argument(
+        "-m", "--mode", help="train, val or test", type=str, required=True
+    )
+    parser.add_argument("-b", "--batch_size", help="batch size", type=int)
+    parser.add_argument("-e", "--epoch", help="number of epochs", type=int)
+    parser.add_argument("-l", "--learning_rate", help="learning rate", type=float)
+    args = parser.parse_args()
 
-  print("Doing classification")
-  print("--------------------")
-  print("classifier:\t" + args.classifier)
+    print("Doing classification")
+    print("--------------------")
+    print("classifier:\t" + args.classifier)
 
-  if args.classifier == "nb":
-    """
-    choose naive bayes
-    """
-  else:
-    """
-    choose the alternative model
-    """
-
-
-
-
-
-
-
-
-
+    if args.classifier == "nb":
+        """
+        choose naive bayes
+        """
+    else:
+        """
+        choose the alternative model
+        """
