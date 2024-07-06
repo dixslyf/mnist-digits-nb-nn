@@ -1,13 +1,15 @@
-import os
-import numpy as np
 import matplotlib.pyplot as plt
 
-x_train = np.load(os.path.join("./data", "digitdata", "x_train.npy"))
-y_train = np.load(os.path.join("./data", "digitdata", "y_train.npy"))
-x_val = np.load(os.path.join("./data", "digitdata", "x_val.npy"))
-y_val = np.load(os.path.join("./data", "digitdata", "y_val.npy"))
-x_test = np.load(os.path.join("./data", "digitdata", "x_test.npy"))
-y_test = np.load(os.path.join("./data", "digitdata", "y_test.npy"))
+from data_loaders import DIGIT_DATA_PATH, NBDataLoader
+
+train_data_loader = NBDataLoader(DIGIT_DATA_PATH, mode="train")
+x_train, y_train = train_data_loader.load()
+
+val_data_loader = NBDataLoader(DIGIT_DATA_PATH, mode="val")
+x_val, y_val = val_data_loader.load()
+
+test_data_loader = NBDataLoader(DIGIT_DATA_PATH, mode="test")
+x_test, y_test = test_data_loader.load()
 
 # Display shapes of the data
 print("Shapes of the data:")
