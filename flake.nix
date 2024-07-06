@@ -31,6 +31,8 @@
           assignment = ./src;
         };
         extraPackages = ps: with ps; [
+          tornado
+
           python-lsp-server
           mypy
           python-lsp-black
@@ -50,6 +52,7 @@
           env
         ];
 
+        MPLBACKEND = "WebAgg";
         LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath (with pkgs; [libz])}:$LD_LIBRARY_PATH";
       };
     });
