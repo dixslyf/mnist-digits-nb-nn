@@ -5,6 +5,9 @@
 # Murdoch University
 
 import numpy as np
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.utils.multiclass import check_classification_targets
+from sklearn.utils.validation import check_is_fitted
 
 
 class BernoulliNaiveBayes:
@@ -44,9 +47,20 @@ class BernoulliNaiveBayes:
         Returns:
         predictions: Predicted class labels for test samples.
         """
+        # Predict the class with the highest log probability.
+        # We don't need to "unlog" the log probabilities since
+        # logarithms are monotonic and preserve the order of the
+        # probabilities.
+        prediction_indices = np.argmax(self._predict_log_probabilities(x_test), axis=1)
+        predictions = self._classes[prediction_indices]
+        return predictions
+
+    def predict_probabilities(self, x_test):
+        return np.exp(self._predict_log_probabilities(x_test))
+
+    def _predict_log_probabilities(self, x_test):
         num_samples, num_features = x_test.shape
         num_classes = len(self._classes)
-        prediction_indices = np.zeros(num_samples)
 
         # To avoid underflows with multiplication and small probabilities,
         # we calculate the log probabilities so that multiplication operations
@@ -66,13 +80,7 @@ class BernoulliNaiveBayes:
             # Corresponds to multiplying by P(c).
             log_probs[:, c_idx] += np.log(self._class_probs[c_idx])
 
-        # Predict the class with the highest log probability.
-        # We don't need to "unlog" the log probabilities since
-        # logarithms are monotonic and preserve the order of the
-        # probabilities.
-        prediction_indices = np.argmax(log_probs, axis=1)
-        predictions = self._classes[prediction_indices]
-        return predictions
+        return log_probs
 
     def _calculate_class_probs(self, y_train):
         """
@@ -134,3 +142,53 @@ class BernoulliNaiveBayes:
             ) / (class_sample_count + 2 * self._smoothing_factor)
 
         return feature_probs
+
+
+class BernoulliNaiveBayesSkLearn(BaseEstimator, ClassifierMixin):
+    """
+    An adapter for BernoulliNaiveBayes to fit scikit-learn's API.
+    """
+
+    def __init__(self, smoothing_factor=1.0):
+        self.smoothing_factor = smoothing_factor
+
+    def fit(self, X, y):
+        # `_validate_data` is provided by `BaseEstimator`.
+        X, y = self._validate_data(X, y, accept_sparse=False)
+        check_classification_targets(y)
+
+        self.nb = BernoulliNaiveBayes(self.smoothing_factor)
+        self.nb.train(X, y)
+
+        self.classes_ = np.unique(y)
+        self.X_ = X
+        self.y_ = y
+        self.is_fitted_ = True
+        return self
+
+    def predict(self, X):
+        check_is_fitted(self)
+        X = self._validate_data(X, reset=False)
+        return self.nb.predict(X)
+
+    def predict_proba(self, X):
+        check_is_fitted(self)
+        X = self._validate_data(X, reset=False)
+        return self.nb.predict_probabilities(X)
+
+    def get_params(self, deep=True):
+        return {"smoothing_factor": self.smoothing_factor}
+
+    def set_params(self, **parameters):
+        for key, value in parameters.items():
+            if key not in ("smoothing_factor"):
+                valid_params = self._get_param_names()
+                raise ValueError(
+                    f"Invalid parameter {key} for estimator {self}. "
+                    f"Valid parameters are: {valid_params}."
+                )
+            setattr(self, key, value)
+        return self
+
+    def _get_param_names(self):
+        return ["smoothing_factor"]

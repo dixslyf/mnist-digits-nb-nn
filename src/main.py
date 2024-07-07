@@ -10,10 +10,13 @@ from functools import wraps
 from typing import Callable
 
 import numpy as np
+from skimage.filters import threshold_li
+from sklearn.feature_selection import VarianceThreshold
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import Binarizer, FunctionTransformer
 
-import preprocess as pp
 from data_loaders import DIGIT_DATA_PATH, NBDataLoader
-from naive_bayes import BernoulliNaiveBayes
+from naive_bayes import BernoulliNaiveBayesSkLearn
 
 DESCRIPTION_STRING = """
 examples:
@@ -95,13 +98,13 @@ def timed(duration_consumer: Callable[[float], None]):
 
 
 @timed(lambda duration: print(f"Training time: {duration:.2f} seconds"))
-def train(model, x_train, y_train):
-    model.train(x_train, y_train)
+def train(train_f, x_train, y_train):
+    train_f(x_train, y_train)
 
 
 @timed(lambda duration: print(f"Prediction time: {duration:.2f} seconds"))
-def predict(model, x):
-    return model.predict(x)
+def predict(predict_f, x):
+    return predict_f(x)
 
 
 def main():
@@ -112,23 +115,38 @@ def main():
 
     if args.classifier == "nb":
         x_train, y_train = NBDataLoader(args.data_dir, mode="train").load()
-        x_train = pp.preprocess(x_train)
 
-        nb = BernoulliNaiveBayes()
-        train(nb, x_train, y_train)
+        pipeline = Pipeline(
+            [
+                (
+                    "flattening",
+                    FunctionTransformer(lambda X: X.reshape((X.shape[0], -1))),
+                ),
+                ("feature_selection", VarianceThreshold(2.3140887256226)),
+                (
+                    "binarisation",
+                    Binarizer(threshold=threshold_li(x_train)),
+                ),
+                (
+                    "classification",
+                    BernoulliNaiveBayesSkLearn(smoothing_factor=0.3983648859347385),
+                ),
+            ]
+        )
+
+        train(lambda x_train, y_train: pipeline.fit(x_train, y_train), x_train, y_train)
 
         if args.mode == "test":
             x_test, y_test = NBDataLoader(args.data_dir, mode="test").load()
-            x_test = pp.preprocess(x_test)
 
             print()
 
-            y_train_pred = predict(nb, x_train)
+            y_train_pred = predict(lambda x_train: pipeline.predict(x_train), x_train)
             accuracy = np.mean(y_train_pred == y_train) * 100
             print(f"Accuracy on train set: {accuracy:.2f}%")
             print()
 
-            y_test_pred = predict(nb, x_test)
+            y_test_pred = predict(lambda x_test: pipeline.predict(x_test), x_test)
             accuracy = np.mean(y_test_pred == y_test) * 100
             print(f"Accuracy on test set: {accuracy:.2f}%")
 
