@@ -13,15 +13,68 @@ class BernoulliNaiveBayes:
         Args:
         smoothing_factor: Laplace smoothing factor to handle zero probabilities.
         """
-        self.smoothing_factor = smoothing_factor
+        self._smoothing_factor = smoothing_factor
 
         # Prior probabilities for each class.
-        self.class_probs = None
+        self._class_probs = None
 
         # Conditional probabilities for each feature given the class.
-        self.feature_probs = None
+        self._feature_probs = None
 
-    def calculate_class_probs(self, y_train):
+    def train(self, x_train, y_train):
+        """
+        Train the naive Bayes classifier.
+
+        Args:
+        x_train: Training features.
+        y_train: Training labels.
+        """
+        self._classes = np.unique(y_train)
+
+        self._class_probs = self._calculate_class_probs(y_train)
+        self._feature_probs = self._calculate_feature_probs(x_train, y_train)
+
+    def predict(self, x_test):
+        """
+        Predict the class labels for test samples.
+
+        Args:
+        x_test: Test features (binary).
+
+        Returns:
+        predictions: Predicted class labels for test samples.
+        """
+        num_samples, num_features = x_test.shape
+        num_classes = len(self._classes)
+        prediction_indices = np.zeros(num_samples)
+
+        # To avoid underflows with multiplication and small probabilities,
+        # we calculate the log probabilities so that multiplication operations
+        # are transformed into addition.
+
+        # Calculate the log probability for each sample and class combination.
+        log_probs = np.zeros((num_samples, num_classes))
+        for c_idx in range(num_classes):
+            # Corresponds to the product of P(x_i | c).
+            log_probs[:, c_idx] = np.sum(
+                # Here is where the Bernoulli distribution comes in.
+                np.log(self._feature_probs[c_idx]) * x_test
+                + np.log(1 - self._feature_probs[c_idx]) * (1 - x_test),
+                axis=1,
+            )
+
+            # Corresponds to multiplying by P(c).
+            log_probs[:, c_idx] += np.log(self._class_probs[c_idx])
+
+        # Predict the class with the highest log probability.
+        # We don't need to "unlog" the log probabilities since
+        # logarithms are monotonic and preserve the order of the
+        # probabilities.
+        prediction_indices = np.argmax(log_probs, axis=1)
+        predictions = self._classes[prediction_indices]
+        return predictions
+
+    def _calculate_class_probs(self, y_train):
         """
         Calculate the prior probabilities for each class.
 
@@ -39,13 +92,13 @@ class BernoulliNaiveBayes:
         # Calculate class probabilities with Laplace smoothing.
         sample_count = len(y_train)
         class_probs = np.zeros(num_classes)
-        class_probs = (class_counts + self.smoothing_factor) / (
-            sample_count + num_classes * self.smoothing_factor
+        class_probs = (class_counts + self._smoothing_factor) / (
+            sample_count + num_classes * self._smoothing_factor
         )
 
         return class_probs
 
-    def calculate_feature_probs(self, x_train, y_train):
+    def _calculate_feature_probs(self, x_train, y_train):
         """
         Calculate the conditional probabilities for each feature given the class.
 
@@ -77,60 +130,7 @@ class BernoulliNaiveBayes:
             # Since there are only two possible values, in the denominator,
             # the Laplace smoothing factor is multiplied by 2.
             feature_probs[c_idx, :] = (
-                np.sum(class_samples, axis=0) + self.smoothing_factor
-            ) / (class_sample_count + 2 * self.smoothing_factor)
+                np.sum(class_samples, axis=0) + self._smoothing_factor
+            ) / (class_sample_count + 2 * self._smoothing_factor)
 
         return feature_probs
-
-    def train(self, x_train, y_train):
-        """
-        Train the naive Bayes classifier.
-
-        Args:
-        x_train: Training features.
-        y_train: Training labels.
-        """
-        self._classes = np.unique(y_train)
-
-        self.class_probs = self.calculate_class_probs(y_train)
-        self.feature_probs = self.calculate_feature_probs(x_train, y_train)
-
-    def predict(self, x_test):
-        """
-        Predict the class labels for test samples.
-
-        Args:
-        x_test: Test features (binary).
-
-        Returns:
-        predictions: Predicted class labels for test samples.
-        """
-        num_samples, num_features = x_test.shape
-        num_classes = len(self._classes)
-        prediction_indices = np.zeros(num_samples)
-
-        # To avoid underflows with multiplication and small probabilities,
-        # we calculate the log probabilities so that multiplication operations
-        # are transformed into addition.
-
-        # Calculate the log probability for each sample and class combination.
-        log_probs = np.zeros((num_samples, num_classes))
-        for c_idx in range(num_classes):
-            # Corresponds to the product of P(x_i | c).
-            log_probs[:, c_idx] = np.sum(
-                # Here is where the Bernoulli distribution comes in.
-                np.log(self.feature_probs[c_idx]) * x_test
-                + np.log(1 - self.feature_probs[c_idx]) * (1 - x_test),
-                axis=1,
-            )
-
-            # Corresponds to multiplying by P(c).
-            log_probs[:, c_idx] += np.log(self.class_probs[c_idx])
-
-        # Predict the class with the highest log probability.
-        # We don't need to "unlog" the log probabilities since
-        # logarithms are monotonic and preserve the order of the
-        # probabilities.
-        prediction_indices = np.argmax(log_probs, axis=1)
-        predictions = self._classes[prediction_indices]
-        return predictions
