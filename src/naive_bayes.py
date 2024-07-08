@@ -5,12 +5,13 @@
 # Murdoch University
 
 import numpy as np
+from scipy.stats import norm
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
 
 
-class BernoulliNaiveBayes:
+class NaiveBayes:
     def __init__(self, smoothing_factor=1.0):
         """
         Args:
@@ -21,8 +22,9 @@ class BernoulliNaiveBayes:
         # Prior probabilities for each class.
         self._class_probs = None
 
-        # Conditional probabilities for each feature given the class.
-        self._feature_probs = None
+        # Mean and variance for each feature given the class.
+        self._feature_means = None
+        self._feature_variances = None
 
     def train(self, x_train, y_train):
         """
@@ -35,14 +37,17 @@ class BernoulliNaiveBayes:
         self._classes = np.unique(y_train)
 
         self._class_probs = self._calculate_class_probs(y_train)
-        self._feature_probs = self._calculate_feature_probs(x_train, y_train)
+        (
+            self._feature_means,
+            self._feature_variances,
+        ) = self._calculate_feature_means_vars(x_train, y_train)
 
     def predict(self, x_test):
         """
         Predict the class labels for test samples.
 
         Args:
-        x_test: Test features (binary).
+        x_test: Test features.
 
         Returns:
         predictions: Predicted class labels for test samples.
@@ -69,13 +74,13 @@ class BernoulliNaiveBayes:
         # Calculate the log probability for each sample and class combination.
         log_probs = np.zeros((num_samples, num_classes))
         for c_idx in range(num_classes):
+            means = self._feature_means[c_idx]
+            vars = self._feature_variances[c_idx]
+            stds = np.sqrt(vars)
+
+            # Calculate the sum of the Gaussian log probabilities.
             # Corresponds to the product of P(x_i | c).
-            log_probs[:, c_idx] = np.sum(
-                # Here is where the Bernoulli distribution comes in.
-                np.log(self._feature_probs[c_idx]) * x_test
-                + np.log(1 - self._feature_probs[c_idx]) * (1 - x_test),
-                axis=1,
-            )
+            log_probs[:, c_idx] = np.sum(norm.logpdf(x_test, means, stds), axis=1)
 
             # Corresponds to multiplying by P(c).
             log_probs[:, c_idx] += np.log(self._class_probs[c_idx])
@@ -106,45 +111,37 @@ class BernoulliNaiveBayes:
 
         return class_probs
 
-    def _calculate_feature_probs(self, x_train, y_train):
+    def _calculate_feature_means_vars(self, x_train, y_train):
         """
-        Calculate the conditional probabilities for each feature given the class.
-
-        Laplace smoothing is applied to avoid zero probabilities.
+        Calculate the mean and variance for each feature given the class.
 
         Args:
-        x_train: Training features (binary).
+        x_train: Training features.
         y_train: Training labels.
 
         Returns:
-        feature_probs: Two-dimensional array of conditional probabilities for
-                       each feature and class. Each row corresponds to a class
-                       and each column corresponds to a feature.
+        feature_means: Two-dimensional array of means for each feature and class.
+        feature_variances: Two-dimensional array of variances for each feature and class.
         """
         num_classes = len(self._classes)
         num_samples, num_features = x_train.shape
-        feature_probs = np.zeros((num_classes, num_features))
+        feature_means = np.zeros((num_classes, num_features))
+        feature_variances = np.zeros((num_classes, num_features))
 
         for c_idx in range(num_classes):
             # Select samples belonging to class `c`.
             class_samples = x_train[y_train == self._classes[c_idx]]
-            class_sample_count = class_samples.shape[0]
 
-            # Calculate the probability of each feature being 1 given class `c`,
-            # with Laplace smoothing. Note that there is an assumption that each
-            # feature is binary (0 or 1) since this classifier is based on the
-            # Bernoulli distribution.
-            #
-            # Since there are only two possible values, in the denominator,
-            # the Laplace smoothing factor is multiplied by 2.
-            feature_probs[c_idx, :] = (
-                np.sum(class_samples, axis=0) + self._smoothing_factor
-            ) / (class_sample_count + 2 * self._smoothing_factor)
+            # Calculate mean and variance for each feature given class `c`.
+            feature_means[c_idx, :] = np.mean(class_samples, axis=0)
+            feature_variances[c_idx, :] = (
+                np.var(class_samples, axis=0) + self._smoothing_factor
+            )  # Add smoothing factor to avoid zero variance.
 
-        return feature_probs
+        return feature_means, feature_variances
 
 
-class BernoulliNaiveBayesSkLearn(BaseEstimator, ClassifierMixin):
+class NaiveBayesSk(BaseEstimator, ClassifierMixin):
     """
     An adapter for BernoulliNaiveBayes to fit scikit-learn's API.
     """
@@ -157,7 +154,7 @@ class BernoulliNaiveBayesSkLearn(BaseEstimator, ClassifierMixin):
         X, y = self._validate_data(X, y, accept_sparse=False)
         check_classification_targets(y)
 
-        self.nb = BernoulliNaiveBayes(self.smoothing_factor)
+        self.nb = NaiveBayes(self.smoothing_factor)
         self.nb.train(X, y)
 
         self.classes_ = np.unique(y)

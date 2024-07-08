@@ -10,13 +10,13 @@ from functools import wraps
 from typing import Callable
 
 import numpy as np
-from skimage.filters import threshold_li
-from sklearn.feature_selection import VarianceThreshold
+from sklearn.decomposition import PCA
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import Binarizer, FunctionTransformer
+from sklearn.preprocessing import FunctionTransformer
 
 from data_loaders import DIGIT_DATA_PATH, NBDataLoader
-from naive_bayes import BernoulliNaiveBayesSkLearn
+from naive_bayes import NaiveBayesSk
 
 DESCRIPTION_STRING = """
 examples:
@@ -122,14 +122,15 @@ def main():
                     "flattening",
                     FunctionTransformer(lambda X: X.reshape((X.shape[0], -1))),
                 ),
-                ("feature_selection", VarianceThreshold(2.3140887256226)),
                 (
-                    "binarisation",
-                    Binarizer(threshold=threshold_li(x_train)),
+                    "feature_extraction",
+                    PCA(n_components=80),
                 ),
                 (
                     "classification",
-                    BernoulliNaiveBayesSkLearn(smoothing_factor=0.3983648859347385),
+                    OneVsRestClassifier(
+                        NaiveBayesSk(smoothing_factor=0.17077024697134568)
+                    ),
                 ),
             ]
         )

@@ -1,21 +1,18 @@
 import argparse
+import sys
 from typing import Final
 
 import numpy as np
-import sys
 import optuna
-import skimage.filters
 import sklearn.metrics
 from optuna.samplers import TPESampler
-from sklearn.ensemble import BaggingClassifier
-from sklearn.feature_selection import VarianceThreshold
-from sklearn.model_selection import StratifiedKFold
+from sklearn.decomposition import PCA
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from sklearn.multiclass import OneVsOneClassifier, OneVsRestClassifier
 from sklearn.pipeline import FunctionTransformer, Pipeline
-from sklearn.preprocessing import Binarizer
 
 from data_loaders import DIGIT_DATA_PATH, NBDataLoader
-from naive_bayes import BernoulliNaiveBayesSkLearn
+from naive_bayes import NaiveBayesSk
 
 RAND_STATE: Final[int] = 0
 NB_STUDY_NAME: Final[str] = "nb-study"
@@ -63,38 +60,21 @@ def tune_nb(X_train, y_train, X_val, y_val):
     y = np.concatenate((y_train, y_val), axis=0)
     assert y.shape == (X.shape[0],)
 
+    # To reduce the computation time, we'll use a subset (20%) of the data.
+    X, _, y, _ = train_test_split(
+        X, y, train_size=0.2, stratify=y, random_state=RAND_STATE
+    )
+
     def objective_nb(trial):
-        smoothing_factor = trial.suggest_float("smoothing_factor", 0.001, 10.0)
-
-        binarise_threshold_func_name = trial.suggest_categorical(
-            "binarise_threshold",
-            [
-                "isodata",
-                "li",
-                "mean",
-                "minimum",
-                "otsu",
-                "triangle",
-                "yen",
-            ],
-        )
-
-        binarise_threshold_func = getattr(
-            skimage.filters, "threshold_{}".format(binarise_threshold_func_name)
-        )
-
-        variance_threshold_value = trial.suggest_float(
-            "variance_threshold_value", 0, 10000
+        pca_n_components = trial.suggest_int(
+            "pca_n_components_count", 10, X.shape[1] * X.shape[2]
         )
 
         grouping = trial.suggest_categorical(
-            "grouping", ["none", "bagging", "one-vs-one", "one-vs-rest"]
+            "grouping", ["none", "one-vs-one", "one-vs-rest"]
         )
 
-        if grouping == "bagging":
-            bag_n_estimators = trial.suggest_int("bag_n_estimators", 3, 10)
-            bag_max_samples = trial.suggest_float("bag_max_samples", 0.1, 1.0)
-            bag_max_features = trial.suggest_float("bag_max_features", 0.1, 1.0)
+        smoothing_factor = trial.suggest_float("smoothing_factor", 0.001, 10.0)
 
         scores = []
         cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RAND_STATE)
@@ -102,18 +82,9 @@ def tune_nb(X_train, y_train, X_val, y_val):
             X_train, y_train = X[train_indices], y[train_indices]
             X_val, y_val = X[val_indices], y[val_indices]
 
-            nb = BernoulliNaiveBayesSkLearn(smoothing_factor)
+            nb = NaiveBayesSk(smoothing_factor)
             clf = (
-                BaggingClassifier(
-                    estimator=nb,
-                    n_estimators=bag_n_estimators,
-                    max_samples=bag_max_samples,
-                    max_features=bag_max_features,
-                    bootstrap_features=True,
-                    random_state=RAND_STATE,
-                )
-                if grouping == "bagging"
-                else OneVsOneClassifier(estimator=nb)
+                OneVsOneClassifier(estimator=nb)
                 if grouping == "one-vs-one"
                 else OneVsRestClassifier(estimator=nb)
                 if grouping == "one-vs-rest"
@@ -126,10 +97,9 @@ def tune_nb(X_train, y_train, X_val, y_val):
                         "flattening",
                         FunctionTransformer(lambda X: X.reshape((X.shape[0], -1))),
                     ),
-                    ("feature_selection", VarianceThreshold(variance_threshold_value)),
                     (
-                        "binarisation",
-                        Binarizer(threshold=binarise_threshold_func(X_train)),
+                        "feature_extraction",
+                        PCA(n_components=pca_n_components),
                     ),
                     (
                         "classification",
@@ -179,7 +149,10 @@ def main():
                 ),
             )
         except KeyError:
-            print("error: failed to retrieve tuned hyperparameters (did you perform tuning?)", file=sys.stderr)
+            print(
+                "error: failed to retrieve tuned hyperparameters (did you perform tuning?)",
+                file=sys.stderr,
+            )
             return 1
 
         print("Best trial:")
