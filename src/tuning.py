@@ -2,6 +2,7 @@ import argparse
 import sys
 from typing import Final
 
+import joblib
 import numpy as np
 import optuna
 import sklearn.metrics
@@ -60,22 +61,15 @@ def parse_args():
     return parser.parse_args()
 
 
-def tune_nb(X_train, y_train, X_val, y_val):
-    # Since we will be performing K-fold cross-validation,
-    # we can combine the train and validation sets.
-    # In theory, using K-fold cross-validation should
-    # reduce the variance of our performance estimates.
-    X = np.concatenate((X_train, X_val), axis=0)
-    assert X.shape[0] == (X_train.shape[0] + X_val.shape[0])
-
-    y = np.concatenate((y_train, y_val), axis=0)
-    assert y.shape == (X.shape[0],)
-
-    # To reduce the computation time, we'll use a subset (20%) of the data.
-    X, _, y, _ = train_test_split(
-        X, y, train_size=0.2, stratify=y, random_state=RAND_STATE
-    )
-
+def tune_nb(
+    X,
+    y,
+    n_trials: int = 25,
+    n_folds: int = 5,
+    anonymous_study: bool = False,
+    rand_state=RAND_STATE,
+    n_jobs: int = 1,
+):
     def objective_nb(trial):
         pca_n_components = trial.suggest_int(
             "pca_n_components_count", 10, X.shape[1] * X.shape[2]
@@ -87,9 +81,11 @@ def tune_nb(X_train, y_train, X_val, y_val):
 
         smoothing_factor = trial.suggest_float("smoothing_factor", 0.001, 10.0)
 
+        print(f"Trial {trial.number} parameters: {trial.params}")
+
         scores = []
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RAND_STATE)
-        for train_indices, val_indices in cv.split(X, y):
+        cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=rand_state)
+        for idx, (train_indices, val_indices) in enumerate(cv.split(X, y)):
             X_train, y_train = X[train_indices], y[train_indices]
             X_val, y_val = X[val_indices], y[val_indices]
 
@@ -122,19 +118,34 @@ def tune_nb(X_train, y_train, X_val, y_val):
             pipeline.fit(X_train, y_train)
             y_pred = pipeline.predict(X_val)
             accuracy = sklearn.metrics.accuracy_score(y_val, y_pred)
+            print(f"Trial {trial.number} tune fold {idx} accuracy: {accuracy}")
             scores.append(accuracy)
-        return np.mean(scores)
+        mean_accuracy = np.mean(scores)
+        print(f"Trial {trial.number} mean accuracy: {mean_accuracy}")
+        return mean_accuracy
 
-    study = optuna.create_study(
-        study_name=NB_STUDY_NAME,
-        direction="maximize",
-        sampler=TPESampler(seed=RAND_STATE),
-        storage=optuna.storages.JournalStorage(
-            optuna.storages.JournalFileStorage(NB_STUDY_JOURNAL_PATH),
-        ),
-        load_if_exists=True,
+    direction = "maximize"
+    sampler = TPESampler(seed=rand_state)
+    study = (
+        optuna.create_study(
+            direction=direction,
+            sampler=sampler,
+        )
+        if anonymous_study
+        else optuna.create_study(
+            study_name=NB_STUDY_NAME,
+            direction=direction,
+            sampler=sampler,
+            storage=optuna.storages.JournalStorage(
+                optuna.storages.JournalFileStorage(NB_STUDY_JOURNAL_PATH),
+            ),
+            load_if_exists=True,
+        )
     )
-    study.optimize(objective_nb, n_trials=25)
+    with joblib.parallel_backend("multiprocessing"):
+        study.optimize(objective_nb, n_trials=n_trials, n_jobs=n_jobs)
+
+    return study.best_trial.params
 
 
 class TuneableNeuralNetwork(nn.Module):
@@ -455,7 +466,22 @@ def main():
         assert X_train.shape[1] == X_val.shape[1]
 
         if args.mode == "tune":
-            tune_nb(X_train, y_train, X_val, y_val)
+            # Since we will be performing K-fold cross-validation,
+            # we can combine the train and validation sets.
+            # In theory, using K-fold cross-validation should
+            # reduce the variance of our performance estimates.
+            X = np.concatenate((X_train, X_val), axis=0)
+            assert X.shape[0] == (X_train.shape[0] + X_val.shape[0])
+
+            y = np.concatenate((y_train, y_val), axis=0)
+            assert y.shape == (X.shape[0],)
+
+            # To reduce the computation time, we'll use a subset (20%) of the data.
+            X, _, y, _ = train_test_split(
+                X, y, train_size=0.2, stratify=y, random_state=RAND_STATE
+            )
+
+            tune_nb(X, y)
             return 0
 
         assert args.mode == "view-best"
