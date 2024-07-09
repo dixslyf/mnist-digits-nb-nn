@@ -40,9 +40,9 @@ class NBDataLoader:
         return x, y
 
 
-class TensorDataLoader(Dataset):
+class CustomTensorDataset(Dataset):
     """
-    A data loader that loads a dataset into tensors.
+    A custom data set that loads a Numpy dataset into tensors.
     """
 
     def __init__(self, data_path: str, mode: str):
@@ -55,7 +55,17 @@ class TensorDataLoader(Dataset):
             raise ValueError('mode must be one of "train", "val" and "test"')
 
         nb_loader = NBDataLoader(data_path, mode)
-        self.x, self.y = nb_loader.load()
+        x, y = nb_loader.load()
+
+        # Divide by 255 to normalise (we know the input feature values range from 0 to 255).
+        x = x / 255
+
+        # The neural network will expect a channel dimension, so we need to add one
+        # even though we only have 1 channel; i.e., (n_samples, 28, 28) -> (n_samples, 1, 28, 28).
+        x = np.expand_dims(x, axis=1)
+
+        self.x = torch.tensor(x.astype(np.float32))
+        self.y = torch.tensor(y.astype(np.int64))
 
     def __len__(self):
         """
@@ -74,4 +84,4 @@ class TensorDataLoader(Dataset):
             x (tensor): Input tensor.
             y (tensor): Target tensor.
         """
-        return torch.tensor(self.x[idx]), torch.tensor(self.y[idx])
+        return self.x[idx], self.y[idx]
