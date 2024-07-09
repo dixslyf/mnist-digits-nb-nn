@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument(
         "-c",
         "--classifier",
-        help='the classifier for which to tune or retrieve hyperparameters ("nb" or "nn")',
+        help='the classifier for which to tune or view hyperparameters ("nb" or "nn")',
         choices=["nb", "nn"],
         required=True,
     )
@@ -52,9 +52,9 @@ def parse_args():
     parser.add_argument(
         "-m",
         "--mode",
-        help='the mode to run in ("tune" or "retrieve") [default: "retrieve"]',
+        help='the mode to run in ("tune" or "view-best") [default: "view-best"]',
         type=str,
-        default="retrieve",
+        default="view-best",
     )
 
     return parser.parse_args()
@@ -169,8 +169,9 @@ class TuneableNeuralNetwork(nn.Module):
         self.conv_layers = nn.ModuleList()
         num_conv_layers = trial.suggest_int("num_conv_layers", 1, 3)
         for idx in range(num_conv_layers):
-            # The first convolution layer will see the original images, which only have 1 channel.
-            # Each subsequent convolution layer will see the output channels of the previous layer.
+            # The first convolution layer will see the original images,
+            # which only have 1 channel. Each subsequent convolution layer
+            # will see the output channels of the previous layer.
             in_channels = 1 if idx == 0 else self.conv_layers[idx - 1].out_channels
 
             # Choose between 32 and 128 for each convoluion layer's number of output channels.
@@ -421,7 +422,7 @@ def tune_nn(train_dataset, val_dataset):
     study.optimize(objective_nn, n_trials=25)
 
 
-def retrieve_best_trial(study_name, study_journal_path):
+def view_best_trial(study_name, study_journal_path):
     try:
         study = optuna.load_study(
             study_name=study_name,
@@ -457,8 +458,8 @@ def main():
             tune_nb(X_train, y_train, X_val, y_val)
             return 0
 
-        assert args.mode == "retrieve"
-        return retrieve_best_trial(NN_STUDY_NAME, NN_STUDY_JOURNAL_PATH)
+        assert args.mode == "view-best"
+        return view_best_trial(NB_STUDY_NAME, NB_STUDY_JOURNAL_PATH)
 
     # Neural network model.
     assert args.classifier == "nn"
@@ -470,8 +471,8 @@ def main():
         tune_nn(train_dataset, val_dataset)
         return 0
 
-    assert args.mode == "retrieve"
-    return retrieve_best_trial(NN_STUDY_NAME, NN_STUDY_JOURNAL_PATH)
+    assert args.mode == "view-best"
+    return view_best_trial(NN_STUDY_NAME, NN_STUDY_JOURNAL_PATH)
 
 
 if __name__ == "__main__":
