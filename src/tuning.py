@@ -118,7 +118,7 @@ def tune_nb(
             pipeline.fit(X_train, y_train)
             y_pred = pipeline.predict(X_val)
             accuracy = sklearn.metrics.accuracy_score(y_val, y_pred)
-            print(f"Trial {trial.number} tune fold {idx} accuracy: {accuracy}")
+            print(f"Trial {trial.number} fold {idx} accuracy: {accuracy}")
             scores.append(accuracy)
         mean_accuracy = np.mean(scores)
         print(f"Trial {trial.number} mean accuracy: {mean_accuracy}")
@@ -353,7 +353,7 @@ def tune_nn(train_dataset, val_dataset):
             )
         )
 
-        print(f"Trial {trial.number} params: {trial.params}")
+        print(f"Trial {trial.number} parameters: {trial.params}")
 
         # Training loop.
         num_epochs = 3
@@ -377,9 +377,9 @@ def tune_nn(train_dataset, val_dataset):
 
                 if batch_idx % 10 == 0:
                     print(
-                        f"Trial {trial.number} epoch {epoch}:",
+                        f"Trial {trial.number} epoch {epoch}",
                         f"[{batch_idx * batch_size}/{len(train_loader.dataset)}]",
-                        f"loss: {loss.item():.6f}",
+                        f"train loss: {loss.item()}",
                     )
 
                 # The Optuna study uses a threshold pruner. If the loss doesn't
@@ -395,6 +395,11 @@ def tune_nn(train_dataset, val_dataset):
             train_loss = train_loss_sum / images_count
             scheduler.step() if scheduler_suggestion == "exponential" else scheduler.step(
                 train_loss
+            )
+
+            print(
+                f"Trial {trial.number} epoch {epoch}",
+                f"mean train loss: {loss.item()}",
             )
 
         # Evaluation loop.
@@ -414,9 +419,11 @@ def tune_nn(train_dataset, val_dataset):
         accuracy = correct / len(val_loader.dataset)
 
         print(
-            f"Trial {trial.number} validation summary:\n ",
-            f"average loss: {val_loss:.4f}\n ",
-            f"accuracy: {accuracy}\n",
+            f"Trial {trial.number} validation loss: {val_loss}",
+        )
+
+        print(
+            f"Trial {trial.number} validation accuracy: {accuracy}",
         )
 
         return val_loss
@@ -458,6 +465,8 @@ def view_best_trial(study_name, study_journal_path):
 
 def main():
     args = parse_args()
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
 
     if args.classifier == "nb":
         # Load the train and validation sets.
