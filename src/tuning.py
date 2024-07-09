@@ -72,7 +72,7 @@ def tune_nb(
 ):
     def objective_nb(trial):
         pca_n_components = trial.suggest_int(
-            "pca_n_components_count", 10, X.shape[1] * X.shape[2]
+            "pca_n_components", 10, X.shape[1] * X.shape[2]
         )
 
         grouping = trial.suggest_categorical(
