@@ -58,17 +58,50 @@ def parse_args():
         default="view-best",
     )
 
+    parser.add_argument(
+        "-t",
+        "--trials",
+        help="the number of trials for hyperparameter tuning [default: 25]",
+        type=int,
+        default=25,
+    )
+
+    parser.add_argument(
+        "-f",
+        "--folds",
+        help="the number of folds for K-fold cross-validation [default: 5]",
+        type=int,
+        default=5,
+    )
+
+    parser.add_argument(
+        "-e",
+        "--epochs",
+        help="the number of epochs for training the neural network"
+        + "(ignored for the naive Bayes classifier) [default: 5]",
+        type=int,
+        default=5,
+    )
+
+    parser.add_argument(
+        "-j",
+        "--jobs",
+        help="the number of parallel jobs [default: 1]",
+        type=int,
+        default=1,
+    )
+
     return parser.parse_args()
 
 
 def tune_nb(
     X,
     y,
-    n_trials: int = 25,
-    n_folds: int = 5,
+    n_trials,
+    n_folds,
+    n_jobs,
     anonymous_study: bool = False,
     rand_state=RAND_STATE,
-    n_jobs: int = 1,
 ):
     def objective_nb(trial):
         pca_n_components = trial.suggest_int(
@@ -284,12 +317,12 @@ class TuneableNeuralNetwork(nn.Module):
 def tune_nn(
     X,
     y,
-    n_trials: int = 25,
-    n_folds: int = 5,
-    n_epochs=5,
+    n_trials,
+    n_folds,
+    n_epochs,
+    n_jobs,
     anonymous_study: bool = False,
     rand_state=RAND_STATE,
-    n_jobs: int = 1,
 ):
     # Use CUDA and MPS if available.
     if torch.cuda.is_available():
@@ -520,10 +553,17 @@ def main():
         )
 
         if args.classifier == "nb":
-            tune_nb(X, y)
+            tune_nb(X, y, n_trials=args.trials, n_folds=args.folds, n_jobs=args.jobs)
         else:
             torch.manual_seed(RAND_STATE)
-            tune_nn(X, y)
+            tune_nn(
+                X,
+                y,
+                n_trials=args.trials,
+                n_folds=args.folds,
+                n_epochs=args.epochs,
+                n_jobs=args.jobs,
+            )
         return 0
 
     assert args.mode == "view-best"
