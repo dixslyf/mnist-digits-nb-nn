@@ -43,8 +43,8 @@ def parse_args():
 
     parser.add_argument(
         "-d",
-        "--data_dir",
-        help='the data set folder path [default: "data/digitdata"]',
+        "--data-dir",
+        help=f'the data set folder path [default: "{DIGIT_DATA_PATH}"]',
         type=str,
         default=DIGIT_DATA_PATH,
     )

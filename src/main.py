@@ -43,8 +43,8 @@ def parse_args():
 
     parser.add_argument(
         "-d",
-        "--data_dir",
-        help='the data set folder path [default: "data/digitdata"]',
+        "--data-dir",
+        help=f'the data set folder path [default: "{DIGIT_DATA_PATH}"]',
         type=str,
         default=DIGIT_DATA_PATH,
     )
@@ -60,7 +60,7 @@ def parse_args():
 
     parser.add_argument(
         "-b",
-        "--batch_size",
+        "--batch-size",
         help="the batch size for the neural network model",
         type=int,
     )
@@ -74,7 +74,7 @@ def parse_args():
 
     parser.add_argument(
         "-l",
-        "--learning_rate",
+        "--learning-rate",
         help="the learning rate of the neural network model",
         type=float,
     )
