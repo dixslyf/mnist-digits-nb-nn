@@ -40,12 +40,21 @@ class NBDataLoader:
         return x, y
 
 
-class CustomTensorDataset(Dataset):
-    """
-    A custom data set that loads a Numpy dataset into tensors.
-    """
+class NumpyMnistDataset(Dataset):
+    def __init__(self, X, y):
+        # Divide by 255 to normalise (we know the input feature values range from 0 to 255).
+        X = X / 255
 
-    def __init__(self, data_path: str, mode: str):
+        # The neural network will expect a channel dimension, so we need to add one
+        # even though we only have 1 channel;
+        # i.e., (n_samples, 28, 28) -> (n_samples, 1, 28, 28).
+        X = np.expand_dims(X, axis=1)
+
+        self.X = torch.tensor(X.astype(np.float32))
+        self.y = torch.tensor(y.astype(np.int64))
+
+    @classmethod
+    def from_path(cls, data_path: str, mode: str):
         """
         Args:
             data_path: Directory containing data files.
@@ -55,23 +64,14 @@ class CustomTensorDataset(Dataset):
             raise ValueError('mode must be one of "train", "val" and "test"')
 
         nb_loader = NBDataLoader(data_path, mode)
-        x, y = nb_loader.load()
-
-        # Divide by 255 to normalise (we know the input feature values range from 0 to 255).
-        x = x / 255
-
-        # The neural network will expect a channel dimension, so we need to add one
-        # even though we only have 1 channel; i.e., (n_samples, 28, 28) -> (n_samples, 1, 28, 28).
-        x = np.expand_dims(x, axis=1)
-
-        self.x = torch.tensor(x.astype(np.float32))
-        self.y = torch.tensor(y.astype(np.int64))
+        X, y = nb_loader.load()
+        return cls(X, y)
 
     def __len__(self):
         """
         Get the length of the dataset.
         """
-        return len(self.x)
+        return len(self.X)
 
     def __getitem__(self, idx):
         """
@@ -81,7 +81,7 @@ class CustomTensorDataset(Dataset):
             idx: Index of the item to retrieve.
 
         Returns:
-            x (tensor): Input tensor.
+            X (tensor): Input tensor.
             y (tensor): Target tensor.
         """
-        return self.x[idx], self.y[idx]
+        return self.X[idx], self.y[idx]

@@ -20,7 +20,7 @@ from sklearn.multiclass import OneVsOneClassifier, OneVsRestClassifier
 from sklearn.pipeline import FunctionTransformer, Pipeline
 from torch.utils.data import DataLoader
 
-from data_loaders import DIGIT_DATA_PATH, CustomTensorDataset, NBDataLoader
+from data_loaders import DIGIT_DATA_PATH, NBDataLoader, NumpyMnistDataset
 from naive_bayes import NaiveBayesSk
 
 RAND_STATE: Final[int] = 0
@@ -281,9 +281,16 @@ class TuneableNeuralNetwork(nn.Module):
         return x
 
 
-def tune_nn(train_dataset, val_dataset):
-    torch.manual_seed(RAND_STATE)
-
+def tune_nn(
+    X,
+    y,
+    n_trials: int = 25,
+    n_folds: int = 5,
+    n_epochs=5,
+    anonymous_study: bool = False,
+    rand_state=RAND_STATE,
+    n_jobs: int = 1,
+):
     # Use CUDA and MPS if available.
     if torch.cuda.is_available():
         device = torch.device("cuda")
@@ -292,35 +299,11 @@ def tune_nn(train_dataset, val_dataset):
     else:
         device = torch.device("cpu")
 
-    # Use a subset of the data to save time.
-    train_subset = torch.utils.data.Subset(
-        train_dataset, range(int(len(train_dataset) * 0.2))
-    )
-    val_subset = torch.utils.data.Subset(
-        val_dataset, range(int(len(val_dataset) * 0.2))
-    )
-
     def objective_nn(trial):
-        # Set up the data loaders.
         batch_size = trial.suggest_categorical("batch_size", [32, 64, 128])
-        train_loader = DataLoader(
-            train_subset,
-            batch_size=batch_size,
-            shuffle=True,
-        )
-
-        val_loader = DataLoader(
-            val_subset,
-            batch_size=batch_size,
-            shuffle=True,
-        )
-
-        # Create model instance
-        model = TuneableNeuralNetwork(trial, torch.tensor([28, 28]))
-
         learning_rate = trial.suggest_float("learning_rate", 1e-4, 1.0)
 
-        # Choose an optimiser.
+        # Choose an optimizer.
         optimizer_suggestion = trial.suggest_categorical(
             "optimizer", ["adam", "adadelta", "sgd", "asgd"]
         )
@@ -333,111 +316,158 @@ def tune_nn(train_dataset, val_dataset):
             if optimizer_suggestion == "sgd"
             else torch.optim.ASGD
         )
-        optimizer = optimizer_class(model.parameters(), lr=learning_rate)
 
         # Choose a scheduler to decay the learning rate.
         scheduler_suggestion = trial.suggest_categorical(
             "scheduler", ["exponential", "reduce_lr_on_plateau"]
         )
-        scheduler = (
-            torch.optim.lr_scheduler.ExponentialLR(
-                optimizer, gamma=trial.suggest_float("exponential_lr_gamma", 0.01, 0.9)
-            )
-            if scheduler_suggestion == "exponential"
-            else torch.optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer,
-                mode="min",
-                factor=trial.suggest_float("reduce_lr_on_plateau_factor", 0.1, 0.5),
-                patience=0,
-                threshold=1e-3,
-            )
-        )
 
-        print(f"Trial {trial.number} parameters: {trial.params}")
-
-        # Training loop.
-        num_epochs = 3
+        # Set up K-fold cross-validation.
+        val_losses = []
+        val_accuracies = []
         step = 0
-        for epoch in range(num_epochs):
-            train_loss_sum = 0
-            images_count = 0
-            model.train()
-            for batch_idx, (images, target) in enumerate(train_loader):
-                images, target = images.to(device), target.to(device)
-                optimizer.zero_grad()
+        cv = StratifiedKFold(n_splits=n_folds, shuffle=True, random_state=rand_state)
+        for idx, (train_indices, val_indices) in enumerate(cv.split(X, y)):
+            X_train, y_train = X[train_indices], y[train_indices]
+            X_val, y_val = X[val_indices], y[val_indices]
 
-                output = model(images)
+            train_dataset = NumpyMnistDataset(X_train, y_train)
+            val_dataset = NumpyMnistDataset(X_val, y_val)
 
-                loss = nn.functional.cross_entropy(output, target)
-                train_loss_sum += loss.item() * len(images)
-                images_count += len(images)
-                loss.backward()
+            train_loader = DataLoader(
+                train_dataset,
+                batch_size=batch_size,
+            )
 
-                optimizer.step()
+            val_loader = DataLoader(
+                val_dataset,
+                batch_size=batch_size,
+            )
 
-                if batch_idx % 10 == 0:
-                    print(
-                        f"Trial {trial.number} epoch {epoch}",
-                        f"[{batch_idx * batch_size}/{len(train_loader.dataset)}]",
-                        f"train loss: {loss.item()}",
+            # Create the neural network instance.
+            # Although the network is created in the loop,
+            # `trial` will always suggest the same parameters.
+            model = TuneableNeuralNetwork(trial, torch.tensor([28, 28]))
+            optimizer = optimizer_class(model.parameters(), lr=learning_rate)
+            scheduler = (
+                torch.optim.lr_scheduler.ExponentialLR(
+                    optimizer,
+                    gamma=trial.suggest_float("exponential_lr_gamma", 0.01, 0.9),
+                )
+                if scheduler_suggestion == "exponential"
+                else torch.optim.lr_scheduler.ReduceLROnPlateau(
+                    optimizer,
+                    mode="min",
+                    factor=trial.suggest_float("reduce_lr_on_plateau_factor", 0.1, 0.5),
+                    patience=0,
+                    threshold=1e-3,
+                )
+            )
+
+            print(f"Trial {trial.number} parameters: {trial.params}")
+
+            # Training loop.
+            for epoch in range(n_epochs):
+                train_loss_sum = 0
+                images_count = 0
+                model.train()
+                for batch_idx, (images, target) in enumerate(train_loader):
+                    images, target = images.to(device), target.to(device)
+                    optimizer.zero_grad()
+
+                    output = model(images)
+
+                    loss = nn.functional.cross_entropy(output, target)
+                    train_loss_sum += loss.item() * len(images)
+                    images_count += len(images)
+                    loss.backward()
+
+                    optimizer.step()
+
+                    if batch_idx % 10 == 0:
+                        print(
+                            f"Trial {trial.number} fold {idx} epoch {epoch}",
+                            f"[{batch_idx * batch_size}/{len(train_loader.dataset)}]",
+                            f"train loss: {loss.item()}",
+                        )
+
+                    # The Optuna study uses a threshold pruner. If the loss doesn't
+                    # go below 1.0 after 50 steps, then we are probably wasting tune,
+                    # so we prune the trial.
+                    if step == 50:
+                        trial.report(loss.item(), step)
+                        if trial.should_prune():
+                            print(f"Trial {trial.number} pruned")
+                            raise TrialPruned
+                    step += 1
+
+                # The `ReduceLROnPlateau` scheduler needs to see the mean train loss.
+                train_loss = train_loss_sum / images_count
+                scheduler.step() if scheduler_suggestion == "exponential" else scheduler.step(
+                    train_loss
+                )
+
+                print(
+                    f"Trial {trial.number} fold {idx} epoch {epoch}",
+                    f"mean train loss: {loss.item()}",
+                )
+
+            # Evaluation loop.
+            model.eval()
+            val_loss_sum = 0
+            correct = 0
+            with torch.no_grad():
+                for images, target in val_loader:
+                    images, target = images.to(device), target.to(device)
+                    output = model(images)
+                    val_loss_sum += nn.functional.cross_entropy(
+                        output, target, reduction="sum"
+                    ).item()
+                    correct += (
+                        (output.argmax(1) == target).type(torch.float).sum().item()
                     )
 
-                # The Optuna study uses a threshold pruner. If the loss doesn't
-                # go below 1.0 after 50 steps, then we are probably wasting tune,
-                # so we prune the trial.
-                if step == 50:
-                    trial.report(loss.item(), step)
-                    if trial.should_prune():
-                        raise TrialPruned
-                step += 1
+            val_loss = val_loss_sum / len(val_loader.dataset)
+            accuracy = correct / len(val_loader.dataset)
 
-            # The `ReduceLROnPlateau` scheduler needs to see the mean train loss.
-            train_loss = train_loss_sum / images_count
-            scheduler.step() if scheduler_suggestion == "exponential" else scheduler.step(
-                train_loss
+            val_losses.append(val_loss)
+            val_accuracies.append(accuracy)
+
+            print(
+                f"Trial {trial.number} fold {idx} validation loss: {val_loss}",
             )
 
             print(
-                f"Trial {trial.number} epoch {epoch}",
-                f"mean train loss: {loss.item()}",
+                f"Trial {trial.number} fold {idx} validation accuracy: {accuracy}",
             )
 
-        # Evaluation loop.
-        model.eval()
-        val_loss_sum = 0
-        correct = 0
-        with torch.no_grad():
-            for images, target in val_loader:
-                images, target = images.to(device), target.to(device)
-                output = model(images)
-                val_loss_sum += nn.functional.cross_entropy(
-                    output, target, reduction="sum"
-                ).item()
-                correct += (output.argmax(1) == target).type(torch.float).sum().item()
-
-        val_loss = val_loss_sum / len(val_loader.dataset)
-        accuracy = correct / len(val_loader.dataset)
-
-        print(
-            f"Trial {trial.number} validation loss: {val_loss}",
-        )
-
-        print(
-            f"Trial {trial.number} validation accuracy: {accuracy}",
-        )
+        mean_loss = np.mean(val_losses)
+        mean_accuracy = np.mean(val_accuracies)
+        print(f"Trial {trial.number} mean loss: {mean_loss}")
+        print(f"Trial {trial.number} mean accuracy: {mean_accuracy}")
 
         return val_loss
 
-    study = optuna.create_study(
-        study_name=NN_STUDY_NAME,
-        sampler=TPESampler(seed=RAND_STATE),
-        pruner=ThresholdPruner(upper=1.0),
-        storage=optuna.storages.JournalStorage(
-            optuna.storages.JournalFileStorage(NN_STUDY_JOURNAL_PATH),
-        ),
-        load_if_exists=True,
+    sampler = TPESampler(seed=rand_state)
+    pruner = ThresholdPruner(upper=1.0)
+    study = (
+        optuna.create_study(sampler=sampler, pruner=pruner)
+        if anonymous_study
+        else optuna.create_study(
+            study_name=NN_STUDY_NAME,
+            sampler=sampler,
+            pruner=pruner,
+            storage=optuna.storages.JournalStorage(
+                optuna.storages.JournalFileStorage(NN_STUDY_JOURNAL_PATH),
+            ),
+            load_if_exists=True,
+        )
     )
-    study.optimize(objective_nn, n_trials=25)
+
+    with joblib.parallel_backend("multiprocessing"):
+        study.optimize(objective_nn, n_trials=n_trials, n_jobs=n_jobs)
+
+    return study.best_trial.params
 
 
 def view_best_trial(study_name, study_journal_path):
@@ -468,46 +498,40 @@ def main():
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-    if args.classifier == "nb":
+    if args.mode == "tune":
         # Load the train and validation sets.
         X_train, y_train = NBDataLoader(args.data_dir, "train").load()
         X_val, y_val = NBDataLoader(args.data_dir, "val").load()
         assert X_train.shape[1] == X_val.shape[1]
 
-        if args.mode == "tune":
-            # Since we will be performing K-fold cross-validation,
-            # we can combine the train and validation sets.
-            # In theory, using K-fold cross-validation should
-            # reduce the variance of our performance estimates.
-            X = np.concatenate((X_train, X_val), axis=0)
-            assert X.shape[0] == (X_train.shape[0] + X_val.shape[0])
+        # Since we will be performing K-fold cross-validation,
+        # we can combine the train and validation sets.
+        # In theory, using K-fold cross-validation should
+        # reduce the variance of our performance estimates.
+        X = np.concatenate((X_train, X_val), axis=0)
+        assert X.shape[0] == (X_train.shape[0] + X_val.shape[0])
 
-            y = np.concatenate((y_train, y_val), axis=0)
-            assert y.shape == (X.shape[0],)
+        y = np.concatenate((y_train, y_val), axis=0)
+        assert y.shape == (X.shape[0],)
 
-            # To reduce the computation time, we'll use a subset (20%) of the data.
-            X, _, y, _ = train_test_split(
-                X, y, train_size=0.2, stratify=y, random_state=RAND_STATE
-            )
+        # To reduce the computation time, we'll use a subset (20%) of the data.
+        X, _, y, _ = train_test_split(
+            X, y, train_size=0.2, stratify=y, random_state=RAND_STATE
+        )
 
+        if args.classifier == "nb":
             tune_nb(X, y)
-            return 0
-
-        assert args.mode == "view-best"
-        return view_best_trial(NB_STUDY_NAME, NB_STUDY_JOURNAL_PATH)
-
-    # Neural network model.
-    assert args.classifier == "nn"
-
-    # Load the train and validation sets.
-    train_dataset = CustomTensorDataset(args.data_dir, "train")
-    val_dataset = CustomTensorDataset(args.data_dir, "val")
-    if args.mode == "tune":
-        tune_nn(train_dataset, val_dataset)
+        else:
+            torch.manual_seed(RAND_STATE)
+            tune_nn(X, y)
         return 0
 
     assert args.mode == "view-best"
-    return view_best_trial(NN_STUDY_NAME, NN_STUDY_JOURNAL_PATH)
+    study_name = NB_STUDY_NAME if args.classifier == "nb" else NN_STUDY_NAME
+    study_journal_path = (
+        NB_STUDY_JOURNAL_PATH if args.classifier == "nb" else NN_STUDY_JOURNAL_PATH
+    )
+    return view_best_trial(study_name, study_journal_path)
 
 
 if __name__ == "__main__":
