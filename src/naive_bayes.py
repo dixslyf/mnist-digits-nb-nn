@@ -143,7 +143,7 @@ class NaiveBayes:
 
 class NaiveBayesSk(BaseEstimator, ClassifierMixin):
     """
-    An adapter for BernoulliNaiveBayes to fit scikit-learn's API.
+    An adapter for NaiveBayes to fit scikit-learn's API.
     """
 
     def __init__(self, smoothing_factor=1.0):
