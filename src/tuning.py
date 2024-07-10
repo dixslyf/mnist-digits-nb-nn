@@ -1,7 +1,7 @@
 import argparse
 import math
 import sys
-from typing import Final
+from typing import Any, Final
 
 import joblib
 import numpy as np
@@ -183,6 +183,77 @@ def tune_nb(
     return study.best_trial.params
 
 
+def realise_nn_params(
+    params: dict[str, Any]
+) -> tuple[nn.Module, torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]:
+    activation_suggestion = params["activation"]
+    activation_class = {
+        "relu": nn.ReLU,
+        "sigmoid": nn.Sigmoid,
+        "softplus": nn.Softplus,
+        "selu": nn.SELU,
+        "leaky_relu": nn.LeakyReLU,
+    }[activation_suggestion]
+    activation = (
+        activation_class(negative_slope=params["leaky_relu_negative_slope"])
+        if activation_suggestion == "leaky_relu"
+        else activation_class()
+    )
+
+    conv_params = []
+    for idx in range(params["num_conv_layers"]):
+        out_channels = params[f"conv{idx}_out_channels"]
+        kernel_size = params[f"conv{idx}_kernel_size"]
+        conv_params.append((out_channels, kernel_size))
+
+    pool_kernel_size = params["pool_kernel_size"]
+
+    conv_dropout_p = params["conv_dropout_p"]
+    linear_dropout_p = params["linear_dropout_p"]
+
+    linear_out_features = []
+    for idx in range(params["num_linear_layers"] - 1):
+        out_features = params[f"linear{idx}_out_features"]
+        linear_out_features.append(out_features)
+
+    model = MnistNN(
+        activation,
+        conv_params,
+        pool_kernel_size,
+        conv_dropout_p,
+        linear_dropout_p,
+        linear_out_features,
+    )
+
+    optimizer_class = (
+        torch.optim.Adam
+        if params["optimizer"] == "adam"
+        else torch.optim.Adadelta
+        if params["optimizer"] == "adadelta"
+        else torch.optim.SGD
+        if params["optimizer"] == "sgd"
+        else torch.optim.ASGD
+    )
+    optimizer = optimizer_class(model.parameters(), lr=params["learning_rate"])
+
+    scheduler = (
+        torch.optim.lr_scheduler.ExponentialLR(
+            optimizer,
+            gamma=params["exponential_lr_gamma"],
+        )
+        if params["scheduler"] == "exponential"
+        else torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            mode="min",
+            factor=params["reduce_lr_on_plateau_factor"],
+            patience=0,
+            threshold=1e-3,
+        )
+    )
+
+    return model, optimizer, scheduler
+
+
 def tune_nn(
     X,
     y,
@@ -190,33 +261,17 @@ def tune_nn(
     n_folds,
     n_epochs,
     n_jobs,
+    device,
     anonymous_study: bool = False,
     rand_state=RAND_STATE,
 ):
-    # Use CUDA and MPS if available.
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-    elif torch.backends.mps.is_available():
-        device = torch.device("mps")
-    else:
-        device = torch.device("cpu")
-
     def objective_nn(trial):
         batch_size = trial.suggest_categorical("batch_size", [32, 64, 128])
-        learning_rate = trial.suggest_float("learning_rate", 1e-4, 1.0)
+        trial.suggest_float("learning_rate", 1e-4, 1.0)
 
         # Choose an optimizer.
-        optimizer_suggestion = trial.suggest_categorical(
+        trial.suggest_categorical(
             "optimizer", ["adam", "adadelta", "sgd", "asgd"]
-        )
-        optimizer_class = (
-            torch.optim.Adam
-            if optimizer_suggestion == "adam"
-            else torch.optim.Adadelta
-            if optimizer_suggestion == "adadelta"
-            else torch.optim.SGD
-            if optimizer_suggestion == "sgd"
-            else torch.optim.ASGD
         )
 
         # Choose a scheduler to decay the learning rate.
@@ -277,23 +332,8 @@ def tune_nn(
                 batch_size=batch_size,
             )
 
-            model = MnistNN.from_params(trial.params)
-
-            optimizer = optimizer_class(model.parameters(), lr=learning_rate)
-            scheduler = (
-                torch.optim.lr_scheduler.ExponentialLR(
-                    optimizer,
-                    gamma=trial.params["exponential_lr_gamma"],
-                )
-                if scheduler_suggestion == "exponential"
-                else torch.optim.lr_scheduler.ReduceLROnPlateau(
-                    optimizer,
-                    mode="min",
-                    factor=trial.params["reduce_lr_on_plateau_factor"],
-                    patience=0,
-                    threshold=1e-3,
-                )
-            )
+            model, optimizer, scheduler = realise_nn_params(trial.params)
+            model.to(device)
 
             # Training loop.
             for epoch in range(n_epochs):
@@ -449,7 +489,7 @@ def main():
         y = np.concatenate((y_train, y_val), axis=0)
         assert y.shape == (X.shape[0],)
 
-        # To reduce the computation time, we'll use a subset (20%) of the data.
+        # To reduce the computation time, we'll use a subset of the data.
         X, _, y, _ = train_test_split(
             X, y, train_size=0.2, stratify=y, random_state=RAND_STATE
         )
@@ -458,6 +498,16 @@ def main():
             tune_nb(X, y, n_trials=args.trials, n_folds=args.folds, n_jobs=args.jobs)
         else:
             torch.manual_seed(RAND_STATE)
+
+            # Use CUDA and MPS if available.
+            device = torch.device(
+                "cuda"
+                if torch.cuda.is_available()
+                else "mps"
+                if torch.backends.mps.is_available()
+                else "cpu"
+            )
+
             tune_nn(
                 X,
                 y,
@@ -465,6 +515,7 @@ def main():
                 n_folds=args.folds,
                 n_epochs=args.epochs,
                 n_jobs=args.jobs,
+                device=device,
             )
         return 0
 

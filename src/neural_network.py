@@ -4,7 +4,7 @@
 # ICT203 - Artificial Intelligence and Intelligent Agents
 # Murdoch University
 
-from typing import Any, Sequence
+from typing import Sequence
 
 import torch
 import torch.nn as nn
@@ -92,47 +92,6 @@ class MnistNN(nn.Module):
         # The last layer needs to have 10 output features (corresponding to the digits).
         self._linear_layers.append(
             nn.Linear(in_features=self._linear_layers[-1].out_features, out_features=10)
-        )
-
-    @classmethod
-    def from_params(cls, params: dict[str, Any]):
-        activation_suggestion = params["activation"]
-        activation_class = {
-            "relu": nn.ReLU,
-            "sigmoid": nn.Sigmoid,
-            "softplus": nn.Softplus,
-            "selu": nn.SELU,
-            "leaky_relu": nn.LeakyReLU,
-        }[activation_suggestion]
-        activation = (
-            activation_class(negative_slope=params["leaky_relu_negative_slope"])
-            if activation_suggestion == "leaky_relu"
-            else activation_class()
-        )
-
-        conv_params = []
-        for idx in range(params["num_conv_layers"]):
-            out_channels = params[f"conv{idx}_out_channels"]
-            kernel_size = params[f"conv{idx}_kernel_size"]
-            conv_params.append((out_channels, kernel_size))
-
-        pool_kernel_size = params["pool_kernel_size"]
-
-        conv_dropout_p = params["conv_dropout_p"]
-        linear_dropout_p = params["linear_dropout_p"]
-
-        linear_out_features = []
-        for idx in range(params["num_linear_layers"] - 1):
-            out_features = params[f"linear{idx}_out_features"]
-            linear_out_features.append(out_features)
-
-        return cls(
-            activation,
-            conv_params,
-            pool_kernel_size,
-            conv_dropout_p,
-            linear_dropout_p,
-            linear_out_features,
         )
 
     def forward(self, x):
