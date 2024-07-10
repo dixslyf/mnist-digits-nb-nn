@@ -27,9 +27,6 @@
         projectDir = ./.;
         inherit overrides;
         preferWheels = true;
-        editablePackageSources = {
-          assignment = ./src;
-        };
         extraPackages = ps: with ps; [
           tornado
 
