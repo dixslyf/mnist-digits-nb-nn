@@ -1,4 +1,5 @@
 import argparse
+import math
 import sys
 from typing import Final
 
@@ -22,6 +23,7 @@ from torch.utils.data import DataLoader
 
 from data_loaders import DIGIT_DATA_PATH, NBDataLoader, NumpyMnistDataset
 from naive_bayes import NaiveBayesSk
+from neural_network import MnistNN
 
 RAND_STATE: Final[int] = 0
 NB_STUDY_NAME: Final[str] = "nb-study"
@@ -181,139 +183,6 @@ def tune_nb(
     return study.best_trial.params
 
 
-class TuneableNeuralNetwork(nn.Module):
-    def __init__(self, trial, input_dims):
-        super().__init__()
-
-        # Choose an activation function for the inner layers.
-        activation_suggestion = trial.suggest_categorical(
-            "activation", ["relu", "sigmoid", "softplus", "selu", "leaky_relu"]
-        )
-        activation_class = {
-            "relu": nn.ReLU,
-            "sigmoid": nn.Sigmoid,
-            "softplus": nn.Softplus,
-            "selu": nn.SELU,
-            "leaky_relu": nn.LeakyReLU,
-        }[activation_suggestion]
-        self.activation = (
-            activation_class(
-                negative_slope=trial.suggest_float(
-                    "leaky_relu_negative_slope", 1e-3, 1e-1
-                )
-            )
-            if activation_suggestion == "leaky_relu"
-            else activation_class()
-        )
-
-        # Keeps track of the dimensions of the image after each convolution and pool.
-        first_linear_dims = input_dims
-
-        # Set up the convolution layers.
-        self.conv_layers = nn.ModuleList()
-        num_conv_layers = trial.suggest_int("num_conv_layers", 1, 3)
-        for idx in range(num_conv_layers):
-            # The first convolution layer will see the original images,
-            # which only have 1 channel. Each subsequent convolution layer
-            # will see the output channels of the previous layer.
-            in_channels = 1 if idx == 0 else self.conv_layers[idx - 1].out_channels
-
-            # Choose between 32 and 128 for each convoluion layer's number of output channels.
-            out_channels = trial.suggest_int(f"conv{idx}_out_channels", 32, 128)
-
-            # Choose between 3 and 5 for each convoluion layer's kernel size.
-            kernel_size = trial.suggest_int(f"conv{idx}_kernel_size", 3, 5)
-
-            conv = nn.Conv2d(
-                in_channels=in_channels,
-                out_channels=out_channels,
-                kernel_size=kernel_size,
-                stride=1,  # Move the kernel filter by one each time.
-            )
-            self.conv_layers.append(conv)
-
-            # After the layer has been applied, the dimensions of the images get reduced.
-            first_linear_dims -= kernel_size - 1
-
-        # Choose between 2 and 3 for the pooling kernel size.
-        # Usually, pooling is done between convolution layers,
-        # but the dimensions of the input images are only 28 by 28,
-        # which is small compared to typical images. If we pool after
-        # every layer, we reduce the dimensions of the images too much
-        # and either lose too much information or end up with a 0-dimension image.
-        pool_kernel_size = trial.suggest_int("pool_kernel_size", 2, 3)
-        self.pool = nn.MaxPool2d(kernel_size=pool_kernel_size)
-
-        # After pooling, each dimension of the image gets divided by the pooling kernel size.
-        first_linear_dims //= pool_kernel_size
-
-        # The number of inputs the first linear layer will see is the
-        # number of output channels of the last convolutional layer
-        # multiplied by the number of pixels of the output image.
-        first_linear_in_features = (
-            self.conv_layers[-1].out_channels * first_linear_dims.prod()
-        )
-
-        # This shouldn't happen since we're careful with the convolutional and pooling
-        # kernel sizes, but this is kept as a sanity check.
-        if first_linear_in_features == 0:
-            print("Encountered 0 input features for the first linear layer")
-            raise TrialPruned
-
-        # Use dropout for regularisation.
-        self.conv_dropout = nn.Dropout(trial.suggest_float("conv_dropout_p", 0.0, 0.5))
-        self.linear_dropout = nn.Dropout(
-            trial.suggest_float("linear_dropout_p", 0.0, 0.5)
-        )
-
-        # Set up the linear layers.
-        # Similar to setting up the convolutional layers.
-        # However, the last layer needs to be handled separately
-        # since the number of outputs must be 10.
-        self.linear_layers = nn.ModuleList()
-        num_linear_layers = trial.suggest_int("num_linear_layers", 2, 4)
-        for idx in range(num_linear_layers - 1):
-            in_features = (
-                first_linear_in_features
-                if idx == 0
-                else self.linear_layers[idx - 1].out_features
-            )
-
-            out_features = trial.suggest_categorical(
-                f"linear{idx}_out_features", [48, 64, 80, 96, 112, 128]
-            )
-
-            linear = nn.Linear(in_features=in_features, out_features=out_features)
-            self.linear_layers.append(linear)
-
-        # The last layer needs to have 10 output features (corresponding to the digits).
-        self.linear_layers.append(
-            nn.Linear(in_features=self.linear_layers[-1].out_features, out_features=10)
-        )
-
-    def forward(self, x):
-        for conv_layer in self.conv_layers:
-            x = conv_layer(x)
-            x = self.activation(x)
-            x = self.conv_dropout(x)
-
-        x = self.pool(x)
-
-        # The convolution layers spit out 3-dimensional data
-        # (4-dimensional if you count the rows),
-        # which need to be flattened before passing to the linear layers.
-        x = torch.flatten(x, 1)
-
-        for linear_layer in self.linear_layers[:-1]:
-            x = linear_layer(x)
-            x = self.activation(x)
-            x = self.linear_dropout(x)
-
-        x = self.linear_layers[-1](x)
-
-        return x
-
-
 def tune_nn(
     X,
     y,
@@ -355,6 +224,37 @@ def tune_nn(
             "scheduler", ["exponential", "reduce_lr_on_plateau"]
         )
 
+        if scheduler_suggestion == "exponential":
+            trial.suggest_float("exponential_lr_gamma", 0.01, 0.9),
+        else:
+            assert scheduler_suggestion == "reduce_lr_on_plateau"
+            trial.suggest_float("reduce_lr_on_plateau_factor", 0.1, 0.5),
+
+        # Choose an activation function for the inner layers.
+        activation = trial.suggest_categorical(
+            "activation", ["relu", "sigmoid", "softplus", "selu", "leaky_relu"]
+        )
+        if activation == "leaky_relu":
+            trial.suggest_float("leaky_relu_negative_slope", 1e-3, 1e-1)
+
+        for idx in range(trial.suggest_int("num_conv_layers", 1, 3)):
+            # Choose between 32 and 128 for each convoluion layer's number of output channels.
+            trial.suggest_int(f"conv{idx}_out_channels", 32, 128)
+
+            # Choose between 3 and 5 for each convoluion layer's kernel size.
+            trial.suggest_int(f"conv{idx}_kernel_size", 3, 5)
+
+        trial.suggest_int("pool_kernel_size", 2, 3)
+        trial.suggest_float("conv_dropout_p", 0.0, 0.5)
+        trial.suggest_float("linear_dropout_p", 0.0, 0.5)
+
+        # Skip the last linear layer since the number of output features
+        # for the last layer is fixed to 10.
+        for idx in range(trial.suggest_int("num_linear_layers", 2, 4) - 1):
+            trial.suggest_int(f"linear{idx}_out_features", 48, 128)
+
+        print(f"Trial {trial.number} parameters: {trial.params}")
+
         # Set up K-fold cross-validation.
         val_losses = []
         val_accuracies = []
@@ -377,27 +277,23 @@ def tune_nn(
                 batch_size=batch_size,
             )
 
-            # Create the neural network instance.
-            # Although the network is created in the loop,
-            # `trial` will always suggest the same parameters.
-            model = TuneableNeuralNetwork(trial, torch.tensor([28, 28]))
+            model = MnistNN.from_params(trial.params)
+
             optimizer = optimizer_class(model.parameters(), lr=learning_rate)
             scheduler = (
                 torch.optim.lr_scheduler.ExponentialLR(
                     optimizer,
-                    gamma=trial.suggest_float("exponential_lr_gamma", 0.01, 0.9),
+                    gamma=trial.params["exponential_lr_gamma"],
                 )
                 if scheduler_suggestion == "exponential"
                 else torch.optim.lr_scheduler.ReduceLROnPlateau(
                     optimizer,
                     mode="min",
-                    factor=trial.suggest_float("reduce_lr_on_plateau_factor", 0.1, 0.5),
+                    factor=trial.params["reduce_lr_on_plateau_factor"],
                     patience=0,
                     threshold=1e-3,
                 )
             )
-
-            print(f"Trial {trial.number} parameters: {trial.params}")
 
             # Training loop.
             for epoch in range(n_epochs):
@@ -411,16 +307,20 @@ def tune_nn(
                     output = model(images)
 
                     loss = nn.functional.cross_entropy(output, target)
+                    if math.isnan(loss.item()):
+                        print(f"Trial {trial.number} pruned due to NaN loss")
+                        raise TrialPruned
+
                     train_loss_sum += loss.item() * len(images)
                     images_count += len(images)
                     loss.backward()
 
                     optimizer.step()
 
-                    if batch_idx % 10 == 0:
+                    if (batch_idx + 1) % 10 == 0:
                         print(
                             f"Trial {trial.number} fold {idx} epoch {epoch}",
-                            f"[{batch_idx * batch_size}/{len(train_loader.dataset)}]",
+                            f"[{(batch_idx + 1) * batch_size}/{len(train_loader.dataset)}]",
                             f"train loss: {loss.item()}",
                         )
 
@@ -430,7 +330,9 @@ def tune_nn(
                     if step == 50:
                         trial.report(loss.item(), step)
                         if trial.should_prune():
-                            print(f"Trial {trial.number} pruned")
+                            print(
+                                f"Trial {trial.number} pruned due to non-convergence of loss"
+                            )
                             raise TrialPruned
                     step += 1
 
