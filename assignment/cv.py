@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 import assignment.tune.nb
 import assignment.tune.nn
 from assignment.data_loaders import NBDataLoader, NumpyMnistDataset
+from assignment.models import check_model
 
 
 def cross_validate_nb(
@@ -209,23 +210,10 @@ def cross_validate_nn(
     print(f"Mean validation accuracy: {np.mean(val_accuracies)}")
 
 
-def _check_args(model, data_dir, trials, outer_folds, inner_folds, jobs, random_state):
-    if model not in ("nb", "nn"):
-        raise ValueError(f'Invalid model "{model}"')
-
-
 def cli_entry(
     model, data_dir, trials, outer_folds, inner_folds, jobs, random_state
 ) -> int:
-    _check_args(
-        model,
-        data_dir,
-        trials,
-        outer_folds,
-        inner_folds,
-        jobs,
-        random_state,
-    )
+    check_model(model)
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 

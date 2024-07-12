@@ -8,13 +8,11 @@ import torch.optim.lr_scheduler
 import assignment.tune
 import assignment.tune.view
 from assignment.data_loaders import NBDataLoader
+from assignment.models import check_model
 
 
-def _check_args(
-    model, data_dir, mode, journal_path, study_name, trials, folds, jobs, random_state
-):
-    if model not in ("nb", "nn"):
-        raise ValueError(f'Invalid model "{model}"')
+def _check_args(model, mode):
+    check_model(model)
 
     if mode not in ("tune", "view-best", "view-all"):
         raise ValueError(f'Invalid mode "{mode}"')
@@ -66,17 +64,7 @@ def tune(model, data_dir, trials, folds, jobs, random_state):
 def cli_entry(
     model, data_dir, mode, journal_path, study_name, trials, folds, jobs, random_state
 ) -> int:
-    _check_args(
-        model,
-        data_dir,
-        mode,
-        journal_path,
-        study_name,
-        trials,
-        folds,
-        jobs,
-        random_state,
-    )
+    _check_args(model, mode)
 
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 

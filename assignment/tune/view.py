@@ -2,10 +2,7 @@ import sys
 
 import optuna
 
-
-def _check_model(model):
-    if model not in ("nn", "nb"):
-        raise ValueError(f"Invalid model {model}")
+from assignment.models import check_model
 
 
 def _load_study(study_name, study_journal_path):
@@ -38,7 +35,7 @@ def print_nn_trial(trial):
 
 
 def view_best(model, study_name, study_journal_path) -> bool:
-    _check_model(model)
+    check_model(model)
 
     study = _load_study(study_name, study_journal_path)
     if study is None:
@@ -60,7 +57,7 @@ def view_best(model, study_name, study_journal_path) -> bool:
 
 
 def view_all(model, study_name, study_journal_path) -> bool:
-    _check_model(model)
+    check_model(model)
 
     study = _load_study(study_name, study_journal_path)
     if study is None:
