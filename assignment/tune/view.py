@@ -37,12 +37,12 @@ def print_nn_trial(trial):
     print(f"Parameters: {trial.params}")
 
 
-def view_best(model, study_name, study_journal_path):
+def view_best(model, study_name, study_journal_path) -> bool:
     _check_model(model)
 
     study = _load_study(study_name, study_journal_path)
     if study is None:
-        return 1
+        return False
 
     try:
         if model == "nb":
@@ -56,15 +56,15 @@ def view_best(model, study_name, study_journal_path):
             file=sys.stderr,
         )
 
-    return 0
+    return True
 
 
-def view_all(model, study_name, study_journal_path):
+def view_all(model, study_name, study_journal_path) -> bool:
     _check_model(model)
 
     study = _load_study(study_name, study_journal_path)
     if study is None:
-        return 1
+        return False
 
     try:
         trials = study.get_trials()
@@ -79,4 +79,4 @@ def view_all(model, study_name, study_journal_path):
         print_trial_f(trial)
         print()
 
-    return 0
+    return True

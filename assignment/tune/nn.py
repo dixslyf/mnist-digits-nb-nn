@@ -2,6 +2,7 @@ import math
 from typing import Any, Final
 
 import joblib
+import numpy as np
 import optuna
 import torch
 from optuna import TrialPruned
@@ -133,11 +134,15 @@ def realise_params(
     return model, optimizer, scheduler
 
 
-def train(trial, fold_idx, train_loader, model, optimizer, scheduler, n_epochs, device):
+def train(
+    study, trial, fold_idx, train_loader, model, optimizer, scheduler, n_epochs, device
+):
+    trials = study.get_trials()
+
     batch_size = trial.params["batch_size"]
 
     # Training loop.
-    step = 0
+    step = fold_idx * n_epochs * len(train_loader)
     model.train()
     for epoch in range(n_epochs):
         train_loss_sum = 0
@@ -168,8 +173,10 @@ def train(trial, fold_idx, train_loader, model, optimizer, scheduler, n_epochs, 
 
             # The Optuna study uses a threshold pruner. If the loss doesn't
             # go below 1.0 after 50 steps, then we are probably wasting tune,
-            # so we prune the trial.
-            if step == 50:
+            # so we prune the trial. However, we want to have at least one
+            # completed trial, so we only do this after we have at least one
+            # trial completed.
+            if len(trials) > 1 and step == 50:
                 trial.report(loss.item(), step)
                 if trial.should_prune():
                     print(f"Trial {trial.number} pruned due to non-convergence of loss")
@@ -184,7 +191,7 @@ def train(trial, fold_idx, train_loader, model, optimizer, scheduler, n_epochs, 
 
         print(
             f"Trial {trial.number} fold {fold_idx} epoch {epoch}",
-            f"mean train loss: {train_loss.item()}",
+            f"mean train loss: {train_loss}",
         )
 
 
@@ -215,7 +222,7 @@ def evaluate(trial, fold_idx, val_loader, model, device):
     return val_loss, accuracy
 
 
-def make_objective(X, y, n_folds, device, rand_state):
+def make_objective(study, X, y, n_folds, device, rand_state):
     def objective(trial):
         suggest_params(trial)
         print(f"Trial {trial.number} parameters: {trial.params}")
@@ -233,34 +240,32 @@ def make_objective(X, y, n_folds, device, rand_state):
 
             batch_size = trial.params["batch_size"]
             train_loader = DataLoader(
-                train_dataset,
-                batch_size=batch_size,
+                train_dataset, batch_size=batch_size, shuffle=True
             )
-            val_loader = DataLoader(
-                val_dataset,
-                batch_size=batch_size,
-            )
+            val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
             model, optimizer, scheduler = realise_params(trial.params)
             model.to(device)
 
             train(
-                trial,
-                fold_idx,
-                train_loader,
-                model,
-                optimizer,
-                scheduler,
-                trial.params["epochs"],
-                device,
+                study=study,
+                trial=trial,
+                fold_idx=fold_idx,
+                train_loader=train_loader,
+                model=model,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                n_epochs=trial.params["epochs"],
+                device=device,
             )
 
             val_loss, accuracy = evaluate(trial, fold_idx, val_loader, model, device)
+
             val_losses.append(val_loss)
             val_accuracies.append(accuracy)
 
-        mean_val_loss = torch.mean(val_losses)
-        mean_val_accuracy = torch.mean(val_accuracies)
+        mean_val_loss = np.mean(val_losses)
+        mean_val_accuracy = np.mean(val_accuracies)
         print(f"Trial {trial.number} mean validation loss: {mean_val_loss}")
         print(f"Trial {trial.number} mean validation accuracy: {mean_val_accuracy}")
 
@@ -300,7 +305,7 @@ def tune_nn(
 
     with joblib.parallel_backend("multiprocessing"):
         study.optimize(
-            make_objective(X, y, n_folds, device, random_state),
+            make_objective(study, X, y, n_folds, device, random_state),
             n_trials=n_trials,
             n_jobs=n_jobs,
         )

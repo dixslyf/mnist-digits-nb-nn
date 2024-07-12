@@ -53,8 +53,10 @@ def realise_params(params: dict[str, Any], random_state) -> Pipeline:
     )
 
 
-def make_objective(X, y, n_folds, random_state):
+def make_objective(study, X, y, n_folds, random_state):
     def objective(trial):
+        trials = study.get_trials()
+
         suggest_params(trial, X)
         print(f"Trial {trial.number} parameters: {trial.params}")
 
@@ -70,22 +72,24 @@ def make_objective(X, y, n_folds, random_state):
 
             y_train_pred = pipeline.predict(X_train)
             train_accuracy = sklearn.metrics.accuracy_score(y_train, y_train_pred)
+            train_accuracies.append(train_accuracy)
 
             print(f"Trial {trial.number} fold {idx} train accuracy: {train_accuracy}")
 
             y_val_pred = pipeline.predict(X_val)
             val_accuracy = sklearn.metrics.accuracy_score(y_val, y_val_pred)
+            val_accuracies.append(val_accuracy)
 
             print(
                 f"Trial {trial.number} fold {idx} validation accuracy: {val_accuracy}"
             )
 
-            trial.report(val_accuracy, idx)
-            if trial.should_prune():
-                print(f"Trial {trial.number} pruned due to poor accuracy")
-                raise TrialPruned
-
-            val_accuracies.append(val_accuracy)
+            # We only prune trials after we have at least one completed trial.
+            if len(trials) > 1:
+                trial.report(val_accuracy, idx)
+                if trial.should_prune():
+                    print(f"Trial {trial.number} pruned due to poor accuracy")
+                    raise TrialPruned
 
         mean_train_accuracy = np.mean(train_accuracies)
         print(f"Trial {trial.number} mean train accuracy: {mean_train_accuracy}")
@@ -131,7 +135,7 @@ def tune_nb(
 
     with joblib.parallel_backend("multiprocessing"):
         study.optimize(
-            make_objective(X, y, n_folds, random_state),
+            make_objective(study, X, y, n_folds, random_state),
             n_trials=n_trials,
             n_jobs=n_jobs,
         )

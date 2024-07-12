@@ -65,7 +65,7 @@ def tune(model, data_dir, trials, folds, jobs, random_state):
 
 def cli_entry(
     model, data_dir, mode, journal_path, study_name, trials, folds, jobs, random_state
-):
+) -> int:
     _check_args(
         model,
         data_dir,
@@ -83,7 +83,11 @@ def cli_entry(
     if mode == "tune":
         return tune(model, data_dir, trials, folds, jobs, random_state)
     elif mode == "view-best":
-        return assignment.tune.view.view_best(model, study_name, journal_path)
+        return (
+            0 if assignment.tune.view.view_best(model, study_name, journal_path) else 1
+        )
     else:
         assert mode == "view-all"
-        return assignment.tune.view.view_all(model, study_name, journal_path)
+        return (
+            0 if assignment.tune.view.view_all(model, study_name, journal_path) else 1
+        )
