@@ -47,10 +47,16 @@
           unstable-pkgs.typst
           pkgs.poetry
           env
+          pkgs.cudatoolkit
+          pkgs.cudaPackages.cudnn
         ];
 
         MPLBACKEND = "WebAgg";
-        LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath (with pkgs; [libz])}:$LD_LIBRARY_PATH";
+
+        # CUDA: https://discourse.nixos.org/t/installing-pytorch-into-a-virtual-python-environment/34720/2
+        LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath (with pkgs; [libz])}:${pkgs.cudatoolkit}/lib:${pkgs.cudaPackages.cudnn}/lib:/run/opengl-driver/lib:$LD_LIBRARY_PATH";
+
+        CUDA_PATH = "${pkgs.cudatoolkit}";
       };
     });
 }
