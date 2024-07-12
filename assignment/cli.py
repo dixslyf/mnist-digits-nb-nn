@@ -2,6 +2,7 @@ import argparse
 import os
 from typing import Final
 
+import assignment.cv
 import assignment.tune
 from assignment.tune.nb import NB_STUDY_JOURNAL_PATH, NB_STUDY_NAME
 from assignment.tune.nn import NN_STUDY_JOURNAL_PATH, NN_STUDY_NAME
@@ -115,18 +116,10 @@ def init_cv_parser(parser, base_parser):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    nn_parser = subparsers.add_parser(
+    _ = subparsers.add_parser(
         "nn",
         parents=[base_parser, base_cv_parser],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-
-    nn_parser.add_argument(
-        "-e",
-        "--epochs",
-        help="the number of epochs to train the model for",
-        type=int,
-        default=10,
     )
 
 
@@ -257,41 +250,33 @@ def make_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def handle_train(args):
-    pass
-
-
-def handle_test(args):
-    pass
-
-
-def handle_cv(args):
-    pass
-
-
-def handle_tune(args):
-    assignment.tune.cli_entry(
-        args.model,
-        args.data_dir,
-        args.mode,
-        args.journal_path,
-        args.study_name,
-        args.trials,
-        args.folds,
-        args.jobs,
-        args.random_state,
-    )
-
-
 def run():
     parser = make_parser()
     args = parser.parse_args()
     match args.subcommand:
         case "train":
-            return handle_train(args)
+            return 0
         case "test":
-            return handle_test(args)
+            return 0
         case "cv":
-            return handle_cv(args)
+            return assignment.cv.cli_entry(
+                model=args.model,
+                data_dir=args.data_dir,
+                trials=args.trials,
+                outer_folds=args.outer_folds,
+                inner_folds=args.inner_folds,
+                jobs=args.jobs,
+                random_state=args.random_state,
+            )
         case "tune":
-            return handle_tune(args)
+            return assignment.tune.cli_entry(
+                model=args.model,
+                data_dir=args.data_dir,
+                mode=args.mode,
+                journal_path=args.journal_path,
+                study_name=args.study_name,
+                trials=args.trials,
+                folds=args.folds,
+                jobs=args.jobs,
+                random_state=args.random_state,
+            )
