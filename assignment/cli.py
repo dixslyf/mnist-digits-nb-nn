@@ -2,6 +2,8 @@ import argparse
 import os
 from typing import Final
 
+import torch
+
 import assignment.cv
 import assignment.test
 import assignment.train
@@ -13,6 +15,17 @@ from assignment.tune.nn import (DEFAULT_NN_STUDY_JOURNAL_PATH,
 
 DATA_PATH: Final[str] = "data"
 DIGIT_DATA_PATH: Final[str] = os.path.join(DATA_PATH, "digitdata")
+
+
+def add_device_arg(parser):
+    parser.add_argument(
+        "-g",
+        "--device",
+        help="the device to use for neural network operations",
+        type=str,
+        choices=["auto", "cpu", "cuda", "mps"],
+        default="auto",
+    )
 
 
 def init_train_parser(parser, base_parser):
@@ -39,6 +52,8 @@ def init_train_parser(parser, base_parser):
         parents=[base_parser],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+
+    add_device_arg(nn_parser)
 
     nn_parser.add_argument(
         "-b",
@@ -98,6 +113,8 @@ def init_test_parser(parser, base_parser):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
+    add_device_arg(nn_parser)
+
     nn_parser.add_argument(
         "-i",
         "--input-path",
@@ -152,11 +169,13 @@ def init_cv_parser(parser, base_parser):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    _ = subparsers.add_parser(
+    nn_parser = subparsers.add_parser(
         "nn",
         parents=[base_parser, base_cv_parser],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+
+    add_device_arg(nn_parser)
 
 
 def init_tune_parser(parser, base_parser):
@@ -227,6 +246,8 @@ def init_tune_parser(parser, base_parser):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
+    add_device_arg(nn_parser)
+
     nn_parser.add_argument(
         "-l",
         "--journal-path",
@@ -289,6 +310,17 @@ def make_parser() -> argparse.ArgumentParser:
 def run():
     parser = make_parser()
     args = parser.parse_args()
+
+    device = torch.device(
+        args.device
+        if args.device != "auto"
+        else "cuda"
+        if torch.cuda.is_available()
+        else "mps"
+        if torch.backends.mps.is_available()
+        else "cpu"
+    )
+
     match args.subcommand:
         case "train":
             return assignment.train.cli_entry(
@@ -296,6 +328,7 @@ def run():
                 data_dir=args.data_dir,
                 output_path=args.output_path,
                 random_state=args.random_state,
+                device=device,
             )
         case "test":
             return assignment.test.cli_entry(
@@ -303,6 +336,7 @@ def run():
                 data_dir=args.data_dir,
                 input_path=args.input_path,
                 random_state=args.random_state,
+                device=device,
             )
         case "cv":
             return assignment.cv.cli_entry(
@@ -313,6 +347,7 @@ def run():
                 inner_folds=args.inner_folds,
                 jobs=args.jobs,
                 random_state=args.random_state,
+                device=device,
             )
         case "tune":
             return assignment.tune.cli_entry(
@@ -325,4 +360,5 @@ def run():
                 folds=args.folds,
                 jobs=args.jobs,
                 random_state=args.random_state,
+                device=device,
             )

@@ -110,7 +110,7 @@ def save_nn(nn, output_path):
     print(f'Saved neural network model to: "{output_path}"')
 
 
-def cli_entry(model, data_dir, output_path, random_state) -> int:
+def cli_entry(model, data_dir, output_path, random_state, device) -> int:
     check_model(model)
 
     print(f'Training model: {"naive Bayes" if model == "nb" else "neural network"}')
@@ -123,16 +123,6 @@ def cli_entry(model, data_dir, output_path, random_state) -> int:
         save_nb(clf, output_path)
     else:
         torch.manual_seed(random_state)
-
-        # Use CUDA and MPS if available.
-        device = torch.device(
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
-        )
-
         model = create_and_train_nn(X_train, y_train, random_state, device)
         save_nn(model, output_path)
 

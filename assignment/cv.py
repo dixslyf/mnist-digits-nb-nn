@@ -2,7 +2,7 @@ import numpy as np
 import optuna
 import sklearn.metrics
 import torch
-from sklearn.model_selection import StratifiedKFold, train_test_split
+from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import DataLoader
 
 import assignment.tune.nb
@@ -125,18 +125,16 @@ def evaluate_nn(model, loader, device):
 
 
 def cross_validate_nn(
-    X, y, n_outer_folds, n_inner_folds, n_trials, n_jobs, random_state
+    X,
+    y,
+    n_outer_folds,
+    n_inner_folds,
+    n_trials,
+    n_jobs,
+    random_state,
+    device,
 ):
     torch.manual_seed(random_state)
-
-    # Use CUDA and MPS if available.
-    device = torch.device(
-        "cuda"
-        if torch.cuda.is_available()
-        else "mps"
-        if torch.backends.mps.is_available()
-        else "cpu"
-    )
 
     train_losses = []
     train_accuracies = []
@@ -211,7 +209,14 @@ def cross_validate_nn(
 
 
 def cli_entry(
-    model, data_dir, trials, outer_folds, inner_folds, jobs, random_state
+    model,
+    data_dir,
+    trials,
+    outer_folds,
+    inner_folds,
+    jobs,
+    random_state,
+    device,
 ) -> int:
     check_model(model)
 
@@ -252,4 +257,5 @@ def cli_entry(
         n_trials=trials,
         n_jobs=jobs,
         random_state=random_state,
+        device=device,
     )

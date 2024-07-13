@@ -67,7 +67,7 @@ def test_nn(model, X, y, random_state, device):
     print(f"Accuracy: {accuracy}")
 
 
-def cli_entry(model, data_dir, input_path, random_state) -> int:
+def cli_entry(model, data_dir, input_path, random_state, device) -> int:
     check_model(model)
 
     # Load the test set.
@@ -78,16 +78,6 @@ def cli_entry(model, data_dir, input_path, random_state) -> int:
         test_nb(clf, X, y)
     else:
         torch.manual_seed(random_state)
-
-        # Use CUDA and MPS if available.
-        device = torch.device(
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
-        )
-
         model = load_nn(input_path)
         test_nn(model, X, y, random_state, device)
 

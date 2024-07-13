@@ -1,9 +1,5 @@
 import numpy as np
 import optuna
-import torch
-import torch.nn.functional
-import torch.optim
-import torch.optim.lr_scheduler
 
 import assignment.tune
 import assignment.tune.view
@@ -18,7 +14,17 @@ def _check_args(model, mode):
         raise ValueError(f'Invalid mode "{mode}"')
 
 
-def tune(model, data_dir, journal_path, study_name, trials, folds, jobs, random_state):
+def tune(
+    model,
+    data_dir,
+    journal_path,
+    study_name,
+    trials,
+    folds,
+    jobs,
+    random_state,
+    device,
+):
     # Load the train and validation sets.
     X_train, y_train = NBDataLoader(data_dir, "train").load()
     X_val, y_val = NBDataLoader(data_dir, "val").load()
@@ -46,15 +52,6 @@ def tune(model, data_dir, journal_path, study_name, trials, folds, jobs, random_
             study_name=study_name,
         )
     else:
-        # Use CUDA and MPS if available.
-        device = torch.device(
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
-        )
-
         assignment.tune.nn.tune_nn(
             X,
             y,
@@ -71,7 +68,16 @@ def tune(model, data_dir, journal_path, study_name, trials, folds, jobs, random_
 
 
 def cli_entry(
-    model, data_dir, mode, journal_path, study_name, trials, folds, jobs, random_state
+    model,
+    data_dir,
+    mode,
+    journal_path,
+    study_name,
+    trials,
+    folds,
+    jobs,
+    random_state,
+    device,
 ) -> int:
     _check_args(model, mode)
 
@@ -79,7 +85,15 @@ def cli_entry(
 
     if mode == "tune":
         return tune(
-            model, data_dir, journal_path, study_name, trials, folds, jobs, random_state
+            model,
+            data_dir,
+            journal_path,
+            study_name,
+            trials,
+            folds,
+            jobs,
+            random_state,
+            device,
         )
     elif mode == "view-best":
         return (
