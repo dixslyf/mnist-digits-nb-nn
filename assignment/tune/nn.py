@@ -14,8 +14,8 @@ from torch.utils.data import DataLoader
 from assignment.data_loaders import NumpyMnistDataset
 from assignment.models.nn import MnistNN
 
-NN_STUDY_NAME: Final[str] = "nn-study"
-NN_STUDY_JOURNAL_PATH: Final[str] = "nn_study_journal.log"
+DEFAULT_NN_STUDY_JOURNAL_PATH: Final[str] = "nn_journal.log"
+DEFAULT_NN_STUDY_NAME: Final[str] = "nn-study"
 
 
 def suggest_params(trial):
@@ -284,6 +284,8 @@ def tune_nn(
     device,
     random_state,
     anonymous_study: bool = False,
+    journal_path=DEFAULT_NN_STUDY_JOURNAL_PATH,
+    study_name=DEFAULT_NN_STUDY_NAME,
 ):
     torch.manual_seed(random_state)
 
@@ -293,11 +295,11 @@ def tune_nn(
         optuna.create_study(sampler=sampler, pruner=pruner)
         if anonymous_study
         else optuna.create_study(
-            study_name=NN_STUDY_NAME,
+            study_name=study_name,
             sampler=sampler,
             pruner=pruner,
             storage=optuna.storages.JournalStorage(
-                optuna.storages.JournalFileStorage(NN_STUDY_JOURNAL_PATH),
+                optuna.storages.JournalFileStorage(journal_path),
             ),
             load_if_exists=True,
         )

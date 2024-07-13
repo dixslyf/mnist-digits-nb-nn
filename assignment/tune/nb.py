@@ -14,9 +14,8 @@ from sklearn.pipeline import FunctionTransformer, Pipeline
 
 from assignment.models.nb import NaiveBayesSk
 
-RAND_STATE: Final[int] = 0
-NB_STUDY_NAME: Final[str] = "nb-study"
-NB_STUDY_JOURNAL_PATH: Final[str] = "nb_study_journal.log"
+DEFAULT_NB_STUDY_JOURNAL_PATH: Final[str] = "nb_journal.log"
+DEFAULT_NB_STUDY_NAME: Final[str] = "nb-study"
 
 
 def suggest_params(trial, X):
@@ -110,6 +109,8 @@ def tune_nb(
     n_jobs,
     random_state,
     anonymous_study: bool = False,
+    journal_path=DEFAULT_NB_STUDY_JOURNAL_PATH,
+    study_name=DEFAULT_NB_STUDY_NAME,
 ):
     direction = "maximize"
     sampler = TPESampler(seed=random_state)
@@ -122,12 +123,12 @@ def tune_nb(
         )
         if anonymous_study
         else optuna.create_study(
-            study_name=NB_STUDY_NAME,
+            study_name=study_name,
             direction=direction,
             sampler=sampler,
             pruner=pruner,
             storage=optuna.storages.JournalStorage(
-                optuna.storages.JournalFileStorage(NB_STUDY_JOURNAL_PATH),
+                optuna.storages.JournalFileStorage(journal_path),
             ),
             load_if_exists=True,
         )

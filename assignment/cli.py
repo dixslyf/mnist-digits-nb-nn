@@ -4,8 +4,10 @@ from typing import Final
 
 import assignment.cv
 import assignment.tune
-from assignment.tune.nb import NB_STUDY_JOURNAL_PATH, NB_STUDY_NAME
-from assignment.tune.nn import NN_STUDY_JOURNAL_PATH, NN_STUDY_NAME
+from assignment.tune.nb import (DEFAULT_NB_STUDY_JOURNAL_PATH,
+                                DEFAULT_NB_STUDY_NAME)
+from assignment.tune.nn import (DEFAULT_NN_STUDY_JOURNAL_PATH,
+                                DEFAULT_NN_STUDY_NAME)
 
 DATA_PATH: Final[str] = "data"
 DIGIT_DATA_PATH: Final[str] = os.path.join(DATA_PATH, "digitdata")
@@ -174,7 +176,7 @@ def init_tune_parser(parser, base_parser):
         "--journal-path",
         help="the path to the Optuna journal to load and view tuned parameters",
         type=str,
-        default=NB_STUDY_JOURNAL_PATH,
+        default=DEFAULT_NB_STUDY_JOURNAL_PATH,
     )
 
     nb_parser.add_argument(
@@ -182,7 +184,7 @@ def init_tune_parser(parser, base_parser):
         "--study-name",
         help="the name of the Optuna study to load from the journal",
         type=str,
-        default=NB_STUDY_NAME,
+        default=DEFAULT_NB_STUDY_NAME,
     )
 
     nn_parser = subparsers.add_parser(
@@ -196,7 +198,7 @@ def init_tune_parser(parser, base_parser):
         "--journal-path",
         help="the path to the Optuna journal to load and view tuned parameters",
         type=str,
-        default=NN_STUDY_JOURNAL_PATH,
+        default=DEFAULT_NN_STUDY_JOURNAL_PATH,
     )
 
     nn_parser.add_argument(
@@ -204,7 +206,7 @@ def init_tune_parser(parser, base_parser):
         "--study-name",
         help="the name of the Optuna study to load from the journal",
         type=str,
-        default=NN_STUDY_NAME,
+        default=DEFAULT_NN_STUDY_NAME,
     )
 
 

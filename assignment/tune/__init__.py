@@ -18,7 +18,7 @@ def _check_args(model, mode):
         raise ValueError(f'Invalid mode "{mode}"')
 
 
-def tune(model, data_dir, trials, folds, jobs, random_state):
+def tune(model, data_dir, journal_path, study_name, trials, folds, jobs, random_state):
     # Load the train and validation sets.
     X_train, y_train = NBDataLoader(data_dir, "train").load()
     X_val, y_val = NBDataLoader(data_dir, "val").load()
@@ -36,7 +36,14 @@ def tune(model, data_dir, trials, folds, jobs, random_state):
 
     if model == "nb":
         assignment.tune.nb.tune_nb(
-            X, y, n_trials=trials, n_folds=folds, n_jobs=jobs, random_state=random_state
+            X,
+            y,
+            n_trials=trials,
+            n_folds=folds,
+            n_jobs=jobs,
+            random_state=random_state,
+            journal_path=journal_path,
+            study_name=study_name,
         )
     else:
         # Use CUDA and MPS if available.
@@ -56,6 +63,8 @@ def tune(model, data_dir, trials, folds, jobs, random_state):
             n_jobs=jobs,
             device=device,
             random_state=random_state,
+            journal_path=journal_path,
+            study_name=study_name,
         )
 
     return 0
@@ -69,7 +78,9 @@ def cli_entry(
     optuna.logging.set_verbosity(optuna.logging.WARNING)
 
     if mode == "tune":
-        return tune(model, data_dir, trials, folds, jobs, random_state)
+        return tune(
+            model, data_dir, journal_path, study_name, trials, folds, jobs, random_state
+        )
     elif mode == "view-best":
         return (
             0 if assignment.tune.view.view_best(model, study_name, journal_path) else 1
