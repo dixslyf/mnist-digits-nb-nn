@@ -309,7 +309,9 @@ def run():
     args = parser.parse_args()
 
     device = torch.device(
-        args.device
+        "cpu"
+        if not hasattr(args, "device")
+        else args.device
         if args.device != "auto"
         else "cuda"
         if torch.cuda.is_available()
@@ -317,6 +319,10 @@ def run():
         if torch.backends.mps.is_available()
         else "cpu"
     )
+
+    batch_size_override = args.batch_size if hasattr(args, "batch_size") else None
+    epochs_override = args.epochs if hasattr(args, "epochs") else None
+    lr_override = args.learning_rate if hasattr(args, "learning_rate") else None
 
     match args.subcommand:
         case "train":
@@ -326,9 +332,9 @@ def run():
                 output_path=args.output_path,
                 random_state=args.random_state,
                 device=device,
-                batch_size_override=args.batch_size,
-                epochs_override=args.epochs,
-                lr_override=args.learning_rate,
+                batch_size_override=batch_size_override,
+                epochs_override=epochs_override,
+                lr_override=lr_override,
             )
         case "test":
             return assignment.test.cli_entry(
