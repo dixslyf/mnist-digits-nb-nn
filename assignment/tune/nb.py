@@ -24,6 +24,10 @@ def suggest_params(trial, X):
     trial.suggest_float("smoothing_factor", 0.001, 10.0)
 
 
+def reshape_X(X):
+    return X.reshape((X.shape[0], -1))
+
+
 def realise_params(params: dict[str, Any], random_state) -> Pipeline:
     nb = NaiveBayesSk(params["smoothing_factor"])
     clf = (
@@ -38,7 +42,7 @@ def realise_params(params: dict[str, Any], random_state) -> Pipeline:
         [
             (
                 "flattening",
-                FunctionTransformer(lambda X: X.reshape((X.shape[0], -1))),
+                FunctionTransformer(reshape_X),
             ),
             (
                 "feature_extraction",

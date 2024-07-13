@@ -3,6 +3,7 @@ import os
 from typing import Final
 
 import assignment.cv
+import assignment.train
 import assignment.tune
 from assignment.tune.nb import (DEFAULT_NB_STUDY_JOURNAL_PATH,
                                 DEFAULT_NB_STUDY_NAME)
@@ -18,10 +19,18 @@ def init_train_parser(parser, base_parser):
         help="the model to train", dest="model", required=True
     )
 
-    _ = subparsers.add_parser(
+    nb_parser = subparsers.add_parser(
         "nb",
         parents=[base_parser],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    nb_parser.add_argument(
+        "-o",
+        "--output-path",
+        help="the file path to save the trained model to",
+        type=str,
+        default="nb.pkl",
     )
 
     nn_parser = subparsers.add_parser(
@@ -52,6 +61,14 @@ def init_train_parser(parser, base_parser):
         help="the learning rate",
         type=float,
         default=1.0,
+    )
+
+    nn_parser.add_argument(
+        "-o",
+        "--output-path",
+        help="the file path to save the trained model to",
+        type=str,
+        default="nn.pt",
     )
 
 
@@ -257,7 +274,12 @@ def run():
     args = parser.parse_args()
     match args.subcommand:
         case "train":
-            return 0
+            return assignment.train.cli_entry(
+                model=args.model,
+                data_dir=args.data_dir,
+                output_path=args.output_path,
+                random_state=args.random_state,
+            )
         case "test":
             return 0
         case "cv":
