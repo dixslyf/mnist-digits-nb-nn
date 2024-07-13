@@ -40,6 +40,7 @@ NN_PARAMS: dict[str, Any] = {
 
 
 def create_and_train_nb(X_train, y_train, random_state):
+    print(f"Parameters: {NB_PARAMS}")
     clf = assignment.tune.nb.realise_params(NB_PARAMS, random_state)
 
     start = time.time()
@@ -70,6 +71,8 @@ def create_and_train_nn(
 
     if lr_override is not None:
         params["learning_rate"] = lr_override
+
+    print(f"Parameters: {params}")
 
     model, optimizer, scheduler = assignment.tune.nn.realise_params(params)
     model.to(device)
