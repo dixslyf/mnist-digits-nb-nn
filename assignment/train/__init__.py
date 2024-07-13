@@ -122,6 +122,8 @@ def cli_entry(model, data_dir, output_path, random_state) -> int:
         clf = create_and_train_nb(X_train, y_train, random_state)
         save_nb(clf, output_path)
     else:
+        torch.manual_seed(random_state)
+
         # Use CUDA and MPS if available.
         device = torch.device(
             "cuda"
