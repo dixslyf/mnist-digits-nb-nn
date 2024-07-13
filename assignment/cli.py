@@ -3,6 +3,7 @@ import os
 from typing import Final
 
 import assignment.cv
+import assignment.test
 import assignment.train
 import assignment.tune
 from assignment.tune.nb import (DEFAULT_NB_STUDY_JOURNAL_PATH,
@@ -77,16 +78,32 @@ def init_test_parser(parser, base_parser):
         help="the model to test", dest="model", required=True
     )
 
-    _ = subparsers.add_parser(
+    nb_parser = subparsers.add_parser(
         "nb",
         parents=[base_parser],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    _ = subparsers.add_parser(
+    nb_parser.add_argument(
+        "-i",
+        "--input-path",
+        help="the file path to load the trained model from",
+        type=str,
+        default="nb.pkl",
+    )
+
+    nn_parser = subparsers.add_parser(
         "nn",
         parents=[base_parser],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    nn_parser.add_argument(
+        "-i",
+        "--input-path",
+        help="the file path to load the trained model from",
+        type=str,
+        default="nn.pt",
     )
 
 
@@ -281,7 +298,12 @@ def run():
                 random_state=args.random_state,
             )
         case "test":
-            return 0
+            return assignment.test.cli_entry(
+                model=args.model,
+                data_dir=args.data_dir,
+                input_path=args.input_path,
+                random_state=args.random_state,
+            )
         case "cv":
             return assignment.cv.cli_entry(
                 model=args.model,

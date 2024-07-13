@@ -1,5 +1,6 @@
 import pickle
 import time
+from typing import Any
 
 import torch
 from torch.utils.data import DataLoader
@@ -9,14 +10,37 @@ import assignment.tune.nn
 from assignment.data_loaders import NBDataLoader, NumpyMnistDataset
 from assignment.models import check_model
 
+NB_PARAMS: dict[str, Any] = {
+    "pca_n_components": 67,
+    "grouping": "none",
+    "smoothing_factor": 0.23584673798488343,
+}
+
+NN_PARAMS: dict[str, Any] = {
+    "batch_size": 64,
+    "epochs": 15,
+    "learning_rate": 0.845073619862434,
+    "optimizer": "adadelta",
+    "scheduler": "exponential",
+    "exponential_lr_gamma": 0.7041331729249224,
+    "activation": "relu",
+    "num_conv_layers": 3,
+    "conv0_out_channels": 41,
+    "conv0_kernel_size": 3,
+    "conv1_out_channels": 123,
+    "conv1_kernel_size": 3,
+    "conv2_out_channels": 119,
+    "conv2_kernel_size": 4,
+    "pool_kernel_size": 3,
+    "conv_dropout_p": 0.27438816607290456,
+    "linear_dropout_p": 0.23955112992546726,
+    "num_linear_layers": 2,
+    "linear0_out_features": 126,
+}
+
 
 def create_and_train_nb(X_train, y_train, random_state):
-    params = {
-        "pca_n_components": 67,
-        "grouping": "none",
-        "smoothing_factor": 0.23584673798488343,
-    }
-    clf = assignment.tune.nb.realise_params(params, random_state)
+    clf = assignment.tune.nb.realise_params(NB_PARAMS, random_state)
 
     start = time.time()
     clf.fit(X_train, y_train)
@@ -28,38 +52,16 @@ def create_and_train_nb(X_train, y_train, random_state):
 
 
 def create_and_train_nn(X_train, y_train, random_state, device):
-    params = {
-        "batch_size": 64,
-        "epochs": 15,
-        "learning_rate": 0.845073619862434,
-        "optimizer": "adadelta",
-        "scheduler": "exponential",
-        "exponential_lr_gamma": 0.7041331729249224,
-        "activation": "relu",
-        "num_conv_layers": 3,
-        "conv0_out_channels": 41,
-        "conv0_kernel_size": 3,
-        "conv1_out_channels": 123,
-        "conv1_kernel_size": 3,
-        "conv2_out_channels": 119,
-        "conv2_kernel_size": 4,
-        "pool_kernel_size": 3,
-        "conv_dropout_p": 0.27438816607290456,
-        "linear_dropout_p": 0.23955112992546726,
-        "num_linear_layers": 2,
-        "linear0_out_features": 126,
-    }
-
-    model, optimizer, scheduler = assignment.tune.nn.realise_params(params)
+    model, optimizer, scheduler = assignment.tune.nn.realise_params(NN_PARAMS)
     model.to(device)
 
     train_dataset = NumpyMnistDataset(X_train, y_train)
-    batch_size = params["batch_size"]
+    batch_size = NN_PARAMS["batch_size"]
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     start = time.time()
     model.train()
-    for epoch in range(params["epochs"]):
+    for epoch in range(NN_PARAMS["epochs"]):
         train_loss_sum = 0
         images_count = 0
         for batch_idx, (images, target) in enumerate(train_loader):
