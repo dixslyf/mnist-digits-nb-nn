@@ -4,6 +4,7 @@ from typing import Final
 
 import torch
 
+import assignment.analysis
 import assignment.cv
 import assignment.test
 import assignment.train
@@ -262,6 +263,10 @@ def init_tune_parser(parser, base_parser):
     )
 
 
+def init_analyse_parser(parser):
+    pass
+
+
 def make_parser() -> argparse.ArgumentParser:
     base_parser = argparse.ArgumentParser(add_help=False)
     base_parser.add_argument(
@@ -300,6 +305,16 @@ def make_parser() -> argparse.ArgumentParser:
 
     tune_parser = subparsers.add_parser("tune")
     init_tune_parser(tune_parser, base_parser)
+
+    analyse_parser = subparsers.add_parser("analyse")
+    analyse_parser.add_argument(
+        "-d",
+        "--data-dir",
+        help="the data set folder path",
+        type=str,
+        default=DIGIT_DATA_PATH,
+    )
+    init_analyse_parser(analyse_parser)
 
     return parser
 
@@ -368,3 +383,5 @@ def run():
                 random_state=args.random_state,
                 device=device,
             )
+        case "analyse":
+            return assignment.analysis.cli_entry(data_dir=args.data_dir)
