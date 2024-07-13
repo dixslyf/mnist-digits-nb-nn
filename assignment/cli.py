@@ -58,25 +58,22 @@ def init_train_parser(parser, base_parser):
     nn_parser.add_argument(
         "-b",
         "--batch-size",
-        help="the number of samples in each batch",
+        help="override for the number of samples in each batch",
         type=int,
-        default=64,
     )
 
     nn_parser.add_argument(
         "-e",
         "--epochs",
-        help="the number of epochs to train the model for",
+        help="override for the number of epochs to train the model for",
         type=int,
-        default=10,
     )
 
     nn_parser.add_argument(
         "-l",
         "--learning-rate",
-        help="the learning rate",
+        help="override for the learning rate",
         type=float,
-        default=1.0,
     )
 
     nn_parser.add_argument(
@@ -329,6 +326,9 @@ def run():
                 output_path=args.output_path,
                 random_state=args.random_state,
                 device=device,
+                batch_size_override=args.batch_size,
+                epochs_override=args.epochs,
+                lr_override=args.learning_rate,
             )
         case "test":
             return assignment.test.cli_entry(

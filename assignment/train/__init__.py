@@ -51,17 +51,36 @@ def create_and_train_nb(X_train, y_train, random_state):
     return clf
 
 
-def create_and_train_nn(X_train, y_train, random_state, device):
-    model, optimizer, scheduler = assignment.tune.nn.realise_params(NN_PARAMS)
+def create_and_train_nn(
+    X_train,
+    y_train,
+    random_state,
+    device,
+    batch_size_override,
+    epochs_override,
+    lr_override,
+):
+    params = NN_PARAMS.copy()
+
+    if batch_size_override is not None:
+        params["batch_size"] = batch_size_override
+
+    if epochs_override is not None:
+        params["epochs"] = epochs_override
+
+    if lr_override is not None:
+        params["learning_rate"] = lr_override
+
+    model, optimizer, scheduler = assignment.tune.nn.realise_params(params)
     model.to(device)
 
     train_dataset = NumpyMnistDataset(X_train, y_train)
-    batch_size = NN_PARAMS["batch_size"]
+    batch_size = params["batch_size"]
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
     start = time.time()
     model.train()
-    for epoch in range(NN_PARAMS["epochs"]):
+    for epoch in range(params["epochs"]):
         train_loss_sum = 0
         images_count = 0
         for batch_idx, (images, target) in enumerate(train_loader):
@@ -110,7 +129,16 @@ def save_nn(nn, output_path):
     print(f'Saved neural network model to: "{output_path}"')
 
 
-def cli_entry(model, data_dir, output_path, random_state, device) -> int:
+def cli_entry(
+    model,
+    data_dir,
+    output_path,
+    random_state,
+    device,
+    batch_size_override,
+    epochs_override,
+    lr_override,
+) -> int:
     check_model(model)
 
     print(f'Training model: {"naive Bayes" if model == "nb" else "neural network"}')
@@ -123,7 +151,15 @@ def cli_entry(model, data_dir, output_path, random_state, device) -> int:
         save_nb(clf, output_path)
     else:
         torch.manual_seed(random_state)
-        model = create_and_train_nn(X_train, y_train, random_state, device)
+        model = create_and_train_nn(
+            X_train,
+            y_train,
+            random_state,
+            device,
+            batch_size_override,
+            epochs_override,
+            lr_override,
+        )
         save_nn(model, output_path)
 
     return 0
