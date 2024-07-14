@@ -75,6 +75,59 @@
 
 = Examining the Provided Code and Data
 
+Several source code and data files were provided by the assignment.
+We have the following data files:
+
+- `x_train.npy`
+
+- `y_train.npy`
+
+- `x_val.npy`
+
+- `y_val.npy`
+
+- `x_test.npy`
+
+- `y_test.npy`
+
+Each file is a binary file storing a NumPy array.
+Files with the `x` prefix contain image data for the handwritten digits.
+Each `x` array has the following shape: `(n, 28, 28)`,
+where `n` is the number of images in the array —
+`n` differs for `x_train`, `x_val` and `x_test`
+as they each have a different number of images.
+
+Each `x` file has a corresponding `y` file
+containing the labels for the images.
+For example, `y_train` contains the image labels for `x_train`.
+Each `y` array is one-dimensional and contains the same number of
+values as there are images in its corresponding `x` array.
+The values range from `0` to `9` to represent the digits.
+
+There are three different `x`-`y` pairs of files: `train`, `val` and `test`.
+The `train` pair is meant to be fed to the classifiers for _training_.
+On the other hand, the `val` pair is for _validation_ —
+that is, for estimating the generalisation performance of the classifiers.
+The validation set can also be used as part of hyperparameter tuning.
+Finally, the `test` pair is for evaluating the performance of the final trained classifiers.
+
+We have the following source code files:
+
+- `main.py`: Provides a commandline interface that lets the user train and test the classifiers with various parameters.
+
+- `naive_bayes.py`: Provides an incomplete implementation of a naive Bayes classifier.
+
+- `alt_model.py`: Provides an incomplete implementation of a PyTorch module.
+
+- `nb_data_loader.py`: Provides the `NBDataLoader` class, which loads the data files described before and allows callers to retrieve the train, validation and test subsets of the image data.
+
+- `alt_data_loader.py`: Provides the `ALTDataLoader` class, a subclass of PyTorch's `Dataset` that reads either the train, validation or test image data depending on what the user specifies.
+  Unfortunately, the class is poorly named —
+  PyTorch provides the `DataLoader` and `Dataset` classes for handling data.
+  Although `ALTDataLoader` is a `Dataset`, it is _not_ a `DataLoader`.
+
+- `analysis.py`: Loads the various data subsets, displays their shapes and visualises one of the images with `matplotlib`.
+
 = Choice of the Alternative Classifier
 
 = Methodology
