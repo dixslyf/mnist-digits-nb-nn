@@ -268,7 +268,7 @@ def init_analyse_parser(parser):
         "analysis",
         help="the type of analysis to perform",
         type=str,
-        choices=["shapes", "samples", "pixel-distributions"],
+        choices=["shapes", "samples", "pixel-distributions", "pca-distributions"],
     )
 
 
@@ -311,14 +311,7 @@ def make_parser() -> argparse.ArgumentParser:
     tune_parser = subparsers.add_parser("tune")
     init_tune_parser(tune_parser, base_parser)
 
-    analyse_parser = subparsers.add_parser("analyse")
-    analyse_parser.add_argument(
-        "-d",
-        "--data-dir",
-        help="the data set folder path",
-        type=str,
-        default=DIGIT_DATA_PATH,
-    )
+    analyse_parser = subparsers.add_parser("analyse", parents=[base_parser])
     init_analyse_parser(analyse_parser)
 
     return parser
@@ -390,5 +383,7 @@ def run():
             )
         case "analyse":
             return assignment.analysis.cli_entry(
-                data_dir=args.data_dir, analysis=args.analysis
+                data_dir=args.data_dir,
+                analysis=args.analysis,
+                random_state=args.random_state,
             )

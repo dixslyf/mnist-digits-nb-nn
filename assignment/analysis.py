@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 from assignment.data_loaders import NBDataLoader
 
@@ -24,18 +25,36 @@ def display_samples(X, y):
     plt.show()
 
 
-def display_pixel_dists(X, y):
+def display_pixel_dists(X):
     rows = 28
     cols = 28
     for idx in range(rows * cols):
         row = idx // cols
         col = idx % cols
         plt.hist(X[:, row, col], bins=20, histtype="step", stacked=True)
-        plt.title("Pixel distributions")
+    plt.title("Pixel distributions")
     plt.show()
 
 
-def cli_entry(data_dir, analysis) -> int:
+def display_pca_dists(X, random_state):
+    rows = 5
+    cols = 10
+
+    n_components = rows * cols
+    pca = PCA(n_components=n_components, random_state=random_state)
+    X_pca = pca.fit_transform(X.reshape((X.shape[0], -1)))
+
+    fig, axes = plt.subplots(rows, cols, figsize=(2 * cols, 2 * rows))
+    fig.suptitle("Principal component distributions", fontsize="x-large")
+    fig.subplots_adjust(top=0.9)
+    for idx in range(n_components):
+        ax = axes[idx // cols, idx % cols]
+        ax.hist(X_pca[:, idx], bins=20, density=True)
+    plt.tight_layout()
+    plt.show()
+
+
+def cli_entry(data_dir, analysis, random_state) -> int:
     train_data_loader = NBDataLoader(data_dir, mode="train")
     X_train, y_train = train_data_loader.load()
 
@@ -51,6 +70,8 @@ def cli_entry(data_dir, analysis) -> int:
         case "samples":
             display_samples(X_train, y_train)
         case "pixel-distributions":
-            display_pixel_dists(X_train, y_train)
+            display_pixel_dists(X_train)
+        case "pca-distributions":
+            display_pca_dists(X_train, random_state)
 
     return 0
