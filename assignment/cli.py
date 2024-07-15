@@ -264,7 +264,12 @@ def init_tune_parser(parser, base_parser):
 
 
 def init_analyse_parser(parser):
-    pass
+    parser.add_argument(
+        "analysis",
+        help="the type of analysis to perform",
+        type=str,
+        choices=["shapes", "samples"],
+    )
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -384,4 +389,6 @@ def run():
                 device=device,
             )
         case "analyse":
-            return assignment.analysis.cli_entry(data_dir=args.data_dir)
+            return assignment.analysis.cli_entry(
+                data_dir=args.data_dir, analysis=args.analysis
+            )
