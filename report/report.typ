@@ -128,8 +128,6 @@ We have the following source code files:
 
 - `analysis.py`: Loads the various data subsets, displays their shapes and visualises one of the images with `matplotlib`.
 
-= Choice of the Alternative Classifier
-
 = Methodology
 
 == Data Exploration
@@ -185,7 +183,49 @@ The first pixel in the top left corner, for example, is black for most,
 if not all, images and, hence, does not contribute much to the identifying each digit.
 Ergo, dimensionality reduction techniques will be useful.
 Specifically, principal component analysis (PCA) was applied
-to the data set for the naive Bayes classifier. // TODO: add link
+to the data set for the naive Bayes classifier (see @sec-naive-bayes).
+
+== Choice of Classifiers
+
+=== Naive Bayes <sec-naive-bayes>
+
+There are several variants of naive Bayes classifiers to choose from.
+For example, we can use a Bernoulli naive Bayes classifier,
+which handles binary input features —
+we would have to convert the grayscale images to binary images
+through, for example, thresholding.
+While this is a viable approach,
+a Bernoulli naive Bayes classifier
+(or any other naive Bayes classifier for that matter)
+assumes that the input features (in this case, the pixel values) are independent,
+which is almost certainly not the case.
+Moreover, we lose the ability to apply dimensionality reduction techniques
+that would not preserve the binary nature of the input features
+(e.g., principal component analysis).
+
+Instead, a Gaussian naive Bayes classifier was implemented,
+with principal component analysis (PCA)
+as a preprocessing step.
+Gaussian naive Bayes classifiers assume their (continuous) input features
+are normally distributed.
+The probability of a specific input feature value given a class
+can then be estimated
+by approximating the input feature's distribution (conditional on the class)
+with a Gaussian distribution 
+and calculating the probability density for the value.
+From @fig-pixel-dists, however, we know that the pixel values
+are _not_ normally distributed, and, hence,
+we can expect that a Gaussian naive Bayes classifier would likely perform poorly.
+If, however, we apply PCA to the data set,
+we observe that the resulting features are mostly normally distributed (@fig-pca-dists).
+Assuming the resulting features retain the underlying patterns of the data set,
+we can expect a Gaussian naive Bayes classifier to perform well.
+
+#figure(
+  caption: [Histograms for each value of the data set projected onto the 1st principal components (using 49 components)],
+  image("graphics/pca-distributions.png")
+) <fig-pca-dists>
+
 
 = Evaluation Results and Discussion
 
