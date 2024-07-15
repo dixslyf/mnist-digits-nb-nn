@@ -33,6 +33,8 @@ def display_pixel_dists(X):
         col = idx % cols
         plt.hist(X[:, row, col], bins=20, histtype="step", stacked=True)
     plt.title("Pixel distributions")
+    plt.xlabel("Pixel value")
+    plt.ylabel("Frequency")
     plt.show()
 
 
@@ -44,12 +46,14 @@ def display_pca_dists(X, random_state):
     pca = PCA(n_components=n_components, random_state=random_state)
     X_pca = pca.fit_transform(X.reshape((X.shape[0], -1)))
 
-    fig, axes = plt.subplots(rows, cols, figsize=(2 * cols, 2 * rows))
-    fig.suptitle("Principal component distributions", fontsize="x-large")
+    fig, axes = plt.subplots(rows, cols, figsize=(3 * cols, 2 * rows))
+    fig.suptitle("1st principal component distributions", fontsize="x-large")
     fig.subplots_adjust(top=0.9)
     for idx in range(n_components):
         ax = axes[idx // cols, idx % cols]
         ax.hist(X_pca[:, idx], bins=20, density=True)
+        ax.set_xlabel("1st principal component value")
+        ax.set_ylabel("Frequency density")
     plt.tight_layout()
     plt.show()
 
