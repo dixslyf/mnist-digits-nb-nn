@@ -268,7 +268,7 @@ def init_analyse_parser(parser):
         "analysis",
         help="the type of analysis to perform",
         type=str,
-        choices=["shapes", "samples"],
+        choices=["shapes", "samples", "pixel-distributions"],
     )
 
 

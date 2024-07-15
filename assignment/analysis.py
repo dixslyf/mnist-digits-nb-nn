@@ -24,6 +24,17 @@ def display_samples(X, y):
     plt.show()
 
 
+def display_pixel_dists(X, y):
+    rows = 28
+    cols = 28
+    for idx in range(rows * cols):
+        row = idx // cols
+        col = idx % cols
+        plt.hist(X[:, row, col], bins=20, histtype="step", stacked=True)
+        plt.title("Pixel distributions")
+    plt.show()
+
+
 def cli_entry(data_dir, analysis) -> int:
     train_data_loader = NBDataLoader(data_dir, mode="train")
     X_train, y_train = train_data_loader.load()
@@ -39,5 +50,7 @@ def cli_entry(data_dir, analysis) -> int:
             display_shapes(X_train, y_train, X_val, y_val, X_test, y_test)
         case "samples":
             display_samples(X_train, y_train)
+        case "pixel-distributions":
+            display_pixel_dists(X_train, y_train)
 
     return 0
