@@ -132,6 +132,61 @@ We have the following source code files:
 
 = Methodology
 
+== Data Exploration
+
+The given NumPy arrays have the following shapes:
+
+- `x_train`: `(48000, 28, 28)`
+
+- `y_train`: `(48000,)`
+
+- `x_val`: `(12000, 28, 28)`
+
+- `y_val`: `(12000,)`
+
+- `x_test`: `(10000, 28, 28)`
+
+- `y_test`: `(10000,)`
+
+That is, we have 48,000 samples in our train set,
+12,000 samples in our validation set
+and 10,000 samples in our test set
+for a total of 70,000 samples.
+
+To get a feel of what the data looks like,
+the first 25 samples from the train set were visualised
+and are shown in @fig-image-samples.
+
+#figure(
+  caption: [Visualisation of the first 25 samples from the train set],
+  image("graphics/image-samples.png")
+) <fig-image-samples>
+
+A first observation we can make is that the first image has
+a small artefact near the bottom right.
+It is not unreasonable to imagine that other images
+could have similar noisy artefacts.
+However, the majority do not seem to contain such artefacts.
+
+A second observation is that most pixels are either completely black (`0`) or completely white (`255`).
+It appears that pixels whose values fall in-between
+are a result of anti-aliasing.
+Indeed, if we plot a histogram for each of the 784 pixel values (@fig-pixel-dists),
+we see that the pixels are roughly binary in nature
+with a bimodal distribution.
+
+#figure(
+  caption: [Stacked histogram for all pixel values],
+  image("graphics/pixel-distributions.png", width: 90%)
+) <fig-pixel-dists>
+
+Finally, we can surmise that not all pixels are significant for recognising digits.
+The first pixel in the top left corner, for example, is black for most,
+if not all, images and, hence, does not contribute much to the identifying each digit.
+Ergo, dimensionality reduction techniques will be useful.
+Specifically, principal component analysis (PCA) was applied
+to the data set for the naive Bayes classifier. // TODO: add link
+
 = Evaluation Results and Discussion
 
 = User Guide
