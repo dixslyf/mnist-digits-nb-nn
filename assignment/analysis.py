@@ -13,9 +13,14 @@ def display_shapes(X_train, y_train, X_val, y_val, X_test, y_test):
 
 
 def display_samples(X, y):
-    image_index = 4
-    plt.imshow(X[image_index], cmap="gray")
-    plt.title(f"Label: {y[image_index]}")
+    rows = 5
+    cols = 5
+    fig, axes = plt.subplots(rows, cols, figsize=(2 * cols, 2 * rows))
+    for idx in range(rows * cols):
+        ax = axes[idx // cols, idx % cols]
+        ax.imshow(X[idx], cmap="gray")
+        ax.set_title(f"Label: {y[idx]}")
+    plt.tight_layout()
     plt.show()
 
 
