@@ -22,6 +22,11 @@
   #it
 ]
 
+#show heading.where(level: 3): it => [
+  #set text(size: SUBSUBHEADING_SIZE, weight: "regular", style: "normal")
+  #it
+]
+
 #show outline: it => {
   set par(leading: 1em)
   it
@@ -96,6 +101,9 @@ Each `x` array has the following shape: `(n, 28, 28)`,
 where `n` is the number of images in the array —
 `n` differs for `x_train`, `x_val` and `x_test`
 as they each have a different number of images.
+The second and third dimensions (both with size `28`)
+represent the pixels.
+Each pixel's value ranges from 0 to 255.
 
 Each `x` file has a corresponding `y` file
 containing the labels for the images.
@@ -211,7 +219,7 @@ are normally distributed.
 The probability of a specific input feature value given a class
 can then be estimated
 by approximating the input feature's distribution (conditional on the class)
-with a Gaussian distribution 
+with a Gaussian distribution
 and calculating the probability density for the value.
 From @fig-pixel-dists, however, we know that the pixel values
 are _not_ normally distributed, and, hence,
