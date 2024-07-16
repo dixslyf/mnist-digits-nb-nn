@@ -226,6 +226,49 @@ we can expect a Gaussian naive Bayes classifier to perform well.
   image("graphics/pca-distributions.png")
 ) <fig-pca-dists>
 
+=== Neural Network
+
+For the neural network model,
+we also have several types of neural networks to choose from,
+such as multilayer perceptrons, recurrent neural networks and convolutional neural networks.
+Since convolutional neural networks (CNNs) use convolutional filters
+to learn local patterns of images,
+they seem to be an obvious choice for our task
+of classifying images of handwritten digits.
+Multilayer perceptrons could have been used as well,
+but they most likely would not perform as well
+since they do not take advantage of the spatial nature of images.
+On the other hand, recurrent neural networks are useful
+when the data comes in sequences,
+which is not the case for our task.
+
+Now that we've chosen our type of neural network,
+we still need to consider several questions,
+like how many layers to use,
+the size of the convolutional kernels,
+the size of pooling filters, 
+etc.
+Such hyperparameters were tuned using the Optuna library.
+However, the general architecture of the CNN is fixed as follows:
+
+- The input images are fed to a set of convolutional layers.
+  Each convolutional layer's output is fed to an activation function (which is also determined through hyperparameter tuning).
+  before being fed to a dropout layer as a form of regularisation.
+
+- After the input has been propagated through the convolutional layers,
+  it goes through a pooling layer.
+  In typical scenarios, pooling is done after each convolutional layer.
+  However, because our images have (relatively) small dimensions of 28 by 28 pixels,
+  pooling after each convolutional layer would
+  reduce the dimensions of the images too quickly,
+  leading to a loss of too much information,
+  and, in some cases, 0-dimensional images.
+  Hence, pooling is done only after all convolutional layers.
+
+- After pooling, the data is flattened before passing through a set of linear layers.
+  The last linear layer has 10 outputs corresonding to each of the 10 possible digits.
+  Each output represents a score, where a higher score represents that the image is more likely to be the digit that the output represents.
+  Thus, the last linear layer represents the final prediction of the model.
 
 = Evaluation Results and Discussion
 
