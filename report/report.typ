@@ -278,6 +278,62 @@ However, the general architecture of the CNN is fixed as follows:
   Each output represents a score, where a higher score represents that the image is more likely to be the digit that the output represents.
   Thus, the last linear layer represents the final prediction of the model.
 
+== Cross-Validation
+
+Cross-validation was performed to estimate the performance
+of the classifiers before the actual training and testing.
+Performing cross-validation is crucial for several reasons:
+
+- Getting an unbiased estimate of the classifiers' performance.
+
+- Verifying that the classifiers were not overfitting or underfitting the training data.
+
+- Tuning hyperparameters.
+
+The performance of the classifiers was estimated using nested stratified $k$-fold cross-validation with $k = 5$
+for both the outer and inner cross-validation loops.
+The inner fold is for hyperparameter tuning,
+whose procedure is described in @sec-hyperparameter-tuning.
+Only 25 trials was used for hyperparameter tuning during cross-validation due to the infeasible running time.
+
+The performance of the methodology for training the naive Bayes classifier was estimated by calculating:
+(a)~the mean of the accuracies against the outer train folds and
+(b)~the mean of the accuracies against the outer validation folds.
+Similarly, the performance of that for the neural network was estimated
+by calculating the above two metrics, in addition to:
+(a)~the mean loss against the outer train folds and
+(b)~the mean loss against the outer validation folds.
+The rationale for calculating metrics for both the train and validation folds
+is so that we can determine if the training procedures tend to underfit or overfit
+the models against the training data.
+
+Results of cross-validation for the naive Bayes classifier are shown below:
+
+- Mean train accuracy: 87.4%
+
+- Mean validation accuracy: 87.2%
+
+Results for the neural network are shown below:
+
+- Mean train loss: 0.0128
+
+- Mean train accuracy: 99.7%
+
+- Mean validation loss: 0.0386
+
+- Mean validation accuracy: 98.9%
+
+Since the metrics for the training and validation folds
+are similar,
+we can conclude that the models are neither underfitting nor overfitting.
+
+Logs for the cross-validation process can be found in the following files,
+which were compressed using gzip:
+
+- `run_logs/cv_nb.log.gz`
+
+- `run_logs/cv_nn.log.gz`
+
 = Evaluation Results and Discussion
 
 = User Guide
