@@ -78,6 +78,16 @@
 
 = Problem Description
 
+The task is to classify images of handwritten digits
+using a naive Bayes classifier
+and a neural-network-based model.
+The handwritten digits are provided as
+a data set of grayscale images encoded as NumPy arrays.
+Each image is labeled with its corresponding digit (0--9)
+and has dimensions of 28 by 28 pixels.
+There is a total of 10 output classes,
+with each class corresponding to a digit.
+
 = Examining the Provided Code and Data
 
 Several source code and data files were provided by the assignment.
