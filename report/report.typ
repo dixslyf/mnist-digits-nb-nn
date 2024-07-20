@@ -264,9 +264,9 @@ Now that we've chosen our type of neural network,
 we still need to consider several questions,
 like how many layers to use,
 the size of the convolutional kernels,
-the size of pooling filters, 
+the size of pooling filters,
 etc.
-Such hyperparameters were tuned using the Optuna library.
+Such hyperparameters were tuned using hyperparameter tuning (see @sec-hyperparameter-tuning).
 However, the general architecture of the CNN is fixed as follows:
 
 - The input images are fed to a set of convolutional layers.
@@ -343,6 +343,126 @@ which were compressed using gzip:
 - `run_logs/cv_nb.log.gz`
 
 - `run_logs/cv_nn.log.gz`
+
+=== Hyperparameter Tuning <sec-hyperparameter-tuning>
+
+Hyperparameter tuning was performed using the #link("https://optuna.org/")[Optuna] library for both the naive Bayes classifier and the convolutional neural network.
+Instead of using sampling algorithms like grid search (slow)
+and random search (not guaranteed to give good parameters),
+the tuning was done using Optuna's default tree-structured Parzen estimator algorithm.
+
+Unlike cross-validation, the hyperparameter tuning procedure
+was performed over 100 trials for both models.
+For the naive Bayes classifier,
+hyperparameters were tuned to maximise the mean validation accuracy
+over 5 folds.
+For the neural network,
+hyperparameters were tuned to minimise the mean validation loss
+over 5 folds.
+
+The following hyperparameters were tuned for the naive Bayes classifier:
+
+- The number of components for principal component analysis (PCA)
+
+- The type of multiclass classification grouping to use (none, one vs. one, or one vs. rest)
+
+- The Laplace smoothing factor
+
+The following hyperparameters were tuned for the neural network model:
+
+- The batch size
+
+- The number of epochs to train the model for
+
+- The learning rate
+
+- The optimiser algorithm (Adam, Adadelta, stochastic gradient descent, or asynchronous stochastic gradient descent)
+
+- The scheduler (exponential, or reduce learning rate on plateau)
+
+  - If exponential, a gamma value is also tuned
+
+  - If reducing the learning rate on plateau, the factor by which the learning rate is reduced is also tuned
+
+- The activation function for each inner layer (ReLU, sigmoid, softplus, SELU or leaky ReLU)
+
+  - If leaky ReLU, the negative slope is also tuned
+
+- The number of convolutional layers
+
+- The number of output channels for each convolutional layer
+
+- The kernel size for each convolutional layer
+
+- The kernel size for pooling
+
+- The dropout probability for convolutional layers
+
+- The dropout probability for linear layers
+
+- The number of output features for each linear layer (except the last, whose number of outputs is fixed to 10)
+
+Logs (compressed with gzip) for hyperparameter tuning can be found in:
+
+ - `tune_nb.log.gz`
+
+ - `tune_nn.log.gz`
+
+The following files are the Optuna journal files, which keep track of information for each trial:
+
+- `nb_journal.log`
+
+- `nn_journal.log`
+
+The best parameters for the naive Bayes classifier achieved a mean validation accuracy of 87.3%:
+
+- Number of PCA components: 67
+
+- Multiclass grouping: none
+
+- Smoothing factor: 0.23584673798488343
+
+The best parameters for the neural network achieved a mean validation loss of 0.026529311973722845:
+
+- Batch_size: 64
+
+- Epochs: 15
+
+- Learning rate: 0.845073619862434
+
+- Optimizer: Adadelta
+
+- Scheduler: exponential
+
+  - Gamma: 0.7041331729249224
+
+- Activation function: ReLU
+
+- Number of convolutional layers: 3
+
+  - Number of output channels for layer 0: 41
+  
+  - Kernel size for layer 0: 3
+  
+  - Number of output channels for layer 1: 123
+  
+  - Kernel size for layer 1: 3
+  
+  - Number of output channels for layer 2: 119
+  
+  - Kernel size for layer 2: 4
+
+- Pool kernel size: 3
+
+- Dropout probability for convolutional layers: 0.27438816607290456
+
+- Number of linear layers: 2
+
+  - Number of output features for linear layer 0: 126
+
+  - Number of output features for linear layer 1: 10 (fixed)
+
+- Dropout probability for linear layers: 0.23955112992546726
 
 = Evaluation Results and Discussion
 
