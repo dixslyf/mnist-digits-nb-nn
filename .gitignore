@@ -2,3 +2,4 @@
 .mypy-cache
 __pycache__
 *.pdf
+poetry.toml
