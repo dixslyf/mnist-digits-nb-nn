@@ -56,6 +56,15 @@
 
 #show figure: set block(breakable: true)
 
+#show table.cell.where(y: 0): set text(weight: "bold")
+#set table(
+  stroke: (x, y) => (
+    top: if y <= 1 { 0.8pt } else { 0pt },
+    bottom: 1pt,
+  ),
+  inset: 0.5em,
+)
+
 // CONTENT
 
 #let date = datetime(
@@ -465,5 +474,73 @@ The best parameters for the neural network achieved a mean validation loss of 0.
 - Dropout probability for linear layers: 0.23955112992546726
 
 = Evaluation Results and Discussion
+
+#let table-scores(scores) = table(
+  columns: 5,
+  align: (col, row) => if col == 0 {
+    horizon + right
+  } else {
+    horizon + center
+  },
+  table.header(
+    [],
+    ..scores
+      .at("0")
+      .keys()
+      .map(h => upper(h.at(0)) + h.slice(1))
+    ),
+  ..scores
+    .pairs()
+    .map(((key, scores)) => if key == "accuracy" {
+      (
+        none, none, none, none, none,
+        key, none, none, scores, none,
+      )
+    } else {
+      (key, ..scores.values())
+    })
+    .flatten()
+    .map(v => if type(v) == float and v >= 0 and v <= 1.0 { [#calc.round(v * 100, digits: 1)\%] } else { v }) // Round floats.
+    .map(v => if type(v) == str { upper(v.at(0)) + v.slice(1) } else { v }) // Capitalise the first letter of strings.
+    .map(v => if type(v) == str { v.replace(regex("avg"), "average") } else { v }) // Replace "avg" with "average".
+    .map(v => if type(v) == str and v.replace(regex("[0-9]"), "") == "" { "Class " + v } else { v }) // Append "class" to digit labels.
+    .map(v => [#v])
+)
+
+== Naive Bayes
+
+#let nb-scores = json("data/test_nb.json")
+#[
+#show table.cell.where(x: 0): set text(weight: "italic")
+#show figure: set block(breakable: false)
+#figure(
+  caption: [Evaluation scores for the naive Bayes classifier],
+  table-scores(nb-scores),
+)
+]
+
+#figure(
+  caption: [Confusion matrix for the naive Bayes classifier],
+  image("graphics/confusion-matrix-nb.png"),
+)
+
+== Neural Network
+
+#let nn-scores = json("data/test_nn.json")
+#[
+#show table.cell.where(x: 0): set text(weight: "italic")
+#show figure: set block(breakable: false)
+#figure(
+  caption: [Evaluation scores for the neural network],
+  table-scores(nn-scores),
+)
+]
+
+Mean loss: 0.02130503880043543
+
+#figure(
+  caption: [Confusion matrix for the neural network],
+  image("graphics/confusion-matrix-nn.png"),
+)
 
 = User Guide

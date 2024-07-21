@@ -1,3 +1,4 @@
+import json
 import pickle
 import time
 
@@ -30,7 +31,9 @@ def load_nn(input_path):
 
 
 def display_metrics(y_true, y_pred):
-    print(sklearn.metrics.classification_report(y_true, y_pred, digits=4))
+    report = sklearn.metrics.classification_report(y_true, y_pred, output_dict=True)
+    report_json = json.dumps(report, indent=4)
+    print(report_json)
     sklearn.metrics.ConfusionMatrixDisplay.from_predictions(y_true, y_pred)
     plt.show()
 
