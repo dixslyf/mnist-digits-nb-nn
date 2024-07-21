@@ -989,6 +989,7 @@ files = [
 
 [package.dependencies]
 numpy = [
+    {version = ">=1.22.4", markers = "python_version < \"3.11\""},
     {version = ">=1.23.2", markers = "python_version == \"3.11\""},
     {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
 ]
@@ -1452,17 +1453,20 @@ sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
 name = "sympy"
-version = "1.12.1"
+version = "1.13.1"
 description = "Computer algebra system (CAS) in Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "sympy-1.12.1-py3-none-any.whl", hash = "sha256:9b2cbc7f1a640289430e13d2a56f02f867a1da0190f2f99d8968c2f74da0e515"},
-    {file = "sympy-1.12.1.tar.gz", hash = "sha256:2877b03f998cd8c08f07cd0de5b767119cd3ef40d09f41c30d722f6686b0fb88"},
+    {file = "sympy-1.13.1-py3-none-any.whl", hash = "sha256:db36cdc64bf61b9b24578b6f7bab1ecdd2452cf008f34faa33776680c26d66f8"},
+    {file = "sympy-1.13.1.tar.gz", hash = "sha256:9cebf7e04ff162015ce31c9c6c9144daa34a93bd082f54fd8f12deca4f47515f"},
 ]
 
 [package.dependencies]
-mpmath = ">=1.1.0,<1.4.0"
+mpmath = ">=1.1.0,<1.4"
+
+[package.extras]
+dev = ["hypothesis (>=6.70.0)", "pytest (>=7.1.0)"]
 
 [[package]]
 name = "tbb"
@@ -1626,5 +1630,5 @@ files = [
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.11"
-content-hash = "b0c22744ea6dd19f7f32bf03cce30d076b8d5d0d611f17e598c68e2ce4dc8492"
+python-versions = "^3.10"
+content-hash = "54cbbab0d7fc7485f678ac461c457314d8dfcf352c8ac5c78fa826a1764fc385"
