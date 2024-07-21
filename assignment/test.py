@@ -22,10 +22,11 @@ def load_nb(input_path):
     return clf
 
 
-def load_nn(input_path):
-    state_dict = torch.load(input_path)
+def load_nn(input_path, device):
+    state_dict = torch.load(input_path, map_location=device)
     model, _, _ = assignment.tune.nn.realise_params(NN_PARAMS)
     model.load_state_dict(state_dict)
+    model.to(device)
     print(f'Loaded neural network model from: "{input_path}"')
     return model
 
@@ -89,7 +90,7 @@ def cli_entry(model, data_dir, input_path, random_state, device) -> int:
         test_nb(clf, X, y)
     else:
         torch.manual_seed(random_state)
-        model = load_nn(input_path)
+        model = load_nn(input_path, device)
         test_nn(model, X, y, random_state, device)
 
     return 0
