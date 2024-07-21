@@ -1,6 +1,7 @@
 import pickle
 import time
 
+import numpy as np
 import sklearn.metrics
 import torch
 from torch.utils.data import DataLoader
@@ -27,6 +28,10 @@ def load_nn(input_path):
     return model
 
 
+def display_metrics(y_true, y_pred):
+    print(f"Accuracy: {sklearn.metrics.accuracy_score(y_true, y_pred)}")
+
+
 def test_nb(clf, X, y):
     start = time.time()
     y_pred = clf.predict(X)
@@ -34,7 +39,7 @@ def test_nb(clf, X, y):
     duration = end - start
     print(f"Prediction time: {duration:.2f} seconds")
 
-    print(f"Accuracy: {sklearn.metrics.accuracy_score(y, y_pred)}")
+    display_metrics(y, y_pred)
 
 
 def test_nn(model, X, y, random_state, device):
@@ -42,12 +47,12 @@ def test_nn(model, X, y, random_state, device):
 
     dataset = NumpyMnistDataset(X, y)
     batch_size = NN_PARAMS["batch_size"]
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
     start = time.time()
     model.eval()
     loss_sum = 0
-    correct = 0
+    y_pred_list = []
     with torch.no_grad():
         for images, target in loader:
             images, target = images.to(device), target.to(device)
@@ -55,16 +60,16 @@ def test_nn(model, X, y, random_state, device):
             loss_sum += torch.nn.functional.cross_entropy(
                 output, target, reduction="sum"
             ).item()
-            correct += (output.argmax(1) == target).type(torch.float).sum().item()
+            y_pred_list.extend(output.argmax(1).tolist())
     end = time.time()
     duration = end - start
     print(f"Prediction time: {duration:.2f} seconds")
 
-    loss = loss_sum / len(loader.dataset)
-    accuracy = correct / len(loader.dataset)
+    mean_loss = loss_sum / len(loader.dataset)
+    print(f"Mean loss: {mean_loss}")
 
-    print(f"Loss: {loss}")
-    print(f"Accuracy: {accuracy}")
+    y_pred = np.array(y_pred_list)
+    display_metrics(y, y_pred)
 
 
 def cli_entry(model, data_dir, input_path, random_state, device) -> int:
