@@ -441,15 +441,15 @@ The best parameters for the neural network achieved a mean validation loss of 0.
 - Number of convolutional layers: 3
 
   - Number of output channels for layer 0: 41
-  
+
   - Kernel size for layer 0: 3
-  
+
   - Number of output channels for layer 1: 123
-  
+
   - Kernel size for layer 1: 3
-  
+
   - Number of output channels for layer 2: 119
-  
+
   - Kernel size for layer 2: 4
 
 - Pool kernel size: 3
