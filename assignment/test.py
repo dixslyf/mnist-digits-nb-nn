@@ -1,6 +1,7 @@
 import pickle
 import time
 
+import matplotlib.pyplot as plt
 import numpy as np
 import sklearn.metrics
 import torch
@@ -29,7 +30,9 @@ def load_nn(input_path):
 
 
 def display_metrics(y_true, y_pred):
-    print(f"Accuracy: {sklearn.metrics.accuracy_score(y_true, y_pred)}")
+    print(sklearn.metrics.classification_report(y_true, y_pred, digits=4))
+    sklearn.metrics.ConfusionMatrixDisplay.from_predictions(y_true, y_pred)
+    plt.show()
 
 
 def test_nb(clf, X, y):
