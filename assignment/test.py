@@ -34,7 +34,7 @@ def test_nb(clf, X, y):
     duration = end - start
     print(f"Prediction time: {duration:.2f} seconds")
 
-    print(f"Accuracy: {sklearn.metrics.accuracy_score(y_pred, y)}")
+    print(f"Accuracy: {sklearn.metrics.accuracy_score(y, y_pred)}")
 
 
 def test_nn(model, X, y, random_state, device):

@@ -45,12 +45,12 @@ def cross_validate_nb(
 
         # Evaluate the classifier on the outer fold train and validation set.
         y_train_pred = pipeline.predict(X_train)
-        train_accuracy = sklearn.metrics.accuracy_score(y_train_pred, y_train)
+        train_accuracy = sklearn.metrics.accuracy_score(y_train, y_train_pred)
         print(f"Outer fold {idx} train accuracy: {train_accuracy}")
         train_accuracies.append(train_accuracy)
 
         y_val_pred = pipeline.predict(X_val)
-        val_accuracy = sklearn.metrics.accuracy_score(y_val_pred, y_val)
+        val_accuracy = sklearn.metrics.accuracy_score(y_val, y_val_pred)
         print(f"Outer fold {idx} validation accuracy: {val_accuracy}")
         val_accuracies.append(val_accuracy)
 
