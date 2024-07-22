@@ -500,7 +500,7 @@ Logs (compressed with gzip) for hyperparameter tuning can be found in:
 
 #let nb-scores = json("data/test_nb.json")
 #[
-#show table.cell.where(x: 0): set text(weight: "italic")
+#show table.cell.where(x: 0): set text(style: "italic")
 #show figure: set block(breakable: false)
 #figure(
   caption: [Evaluation scores for the naive Bayes classifier],
@@ -517,7 +517,7 @@ Logs (compressed with gzip) for hyperparameter tuning can be found in:
 
 #let nn-scores = json("data/test_nn.json")
 #[
-#show table.cell.where(x: 0): set text(weight: "italic")
+#show table.cell.where(x: 0): set text(style: "italic")
 #show figure: set block(breakable: false)
 #figure(
   caption: [Evaluation scores for the neural network],
