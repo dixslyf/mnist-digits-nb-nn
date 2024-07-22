@@ -278,7 +278,7 @@ The general architecture of the CNN is outlined as follows:
   These outputs represent scores that constitute the model's final prediction.
   Higher scores indicate a higher likelihood that the image corresponds to the respective digit.
 
-== Performance Estimation
+== Performance Estimation <sec-performance-estimation>
 
 Cross-validation was performed to estimate the classifiers' performance before final training and testing.
 This step is critical for several reasons:
@@ -299,6 +299,16 @@ with only 25 trials due to time constraints.
 The outer loop estimates the generalized performance of the models.
 Each iteration trains the model on 4 of the 5 folds
 and evaluates it on the remaining fold.
+
+The training and validation sets were combined
+to form an auxiliary set with 60,000 samples.
+The reason for combining them is to have more data for the performance estimation.
+It is important to note that combining them does not
+leak any validation data to the training procedure
+since we are using $k$-fold cross-validation
+and not holdout validation,
+so each trained model is still evaluated on unseen data.
+In theory, performing $k$-fold cross-validation provides a more unbiased estimate of the models' performance.
 
 The performance of the naive Bayes classifier was evaluated by calculating:
 (a)~mean accuracy on the outer train folds and
@@ -341,6 +351,9 @@ Hyperparameter tuning was performed using the #link("https://optuna.org/")[Optun
 Instead of using sampling algorithms like grid search (slow)
 and random search (suboptimal),
 Optuna's default tree-structured Parzen estimator algorithm was used.
+As with performance estimation,
+the training and validation subsets were combined
+to form an auxiliary set (see @sec-performance-estimation for the rationale).
 
 Hyperparameter tuning
 was conducted for 100 trials for both models.
