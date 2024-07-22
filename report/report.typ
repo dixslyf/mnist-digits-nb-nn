@@ -474,6 +474,31 @@ Logs (compressed with gzip) for hyperparameter tuning can be found in:
 
  - `tune_nn.log.gz`
 
+== Training and Testing
+
+The Naive Bayes classifier and CNN were trained using the optimal hyperparameters identified through tuning.
+Training was conducted on the training subset (`x_train.npy` and `y_train.npy`).
+Post-training, the models were serialized and saved to disk:
+the naive Bayes classifier to `nb.pkl` and the CNN to `nn.pt`.
+
+For the final evaluation, the models were deserialized and evaluated on the test set.
+In addition to generating a confusion matrix,
+the following metrics were calculated:
+
+- Accuracy
+
+- Precision
+
+- Recall
+
+- F1-score
+
+- Support (number of correctly classified samples)
+
+Precision, recall, F1-score and support metrics were computed for each class.
+Additionally, macro and weighted averages of these metrics were determined.
+Micro averages were not calculated as they are equivalent to accuracy
+when considering all classes.
 
 = Evaluation Results and Discussion
 
