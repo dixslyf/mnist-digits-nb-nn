@@ -87,20 +87,21 @@
 
 = Problem Description
 
-The task is to classify images of handwritten digits
-using a naive Bayes classifier
-and a neural-network-based model.
-The handwritten digits are provided as
-a data set of grayscale images encoded as NumPy arrays.
-Each image is labeled with its corresponding digit (0--9)
-and has dimensions of 28 by 28 pixels.
-There is a total of 10 output classes,
-with each class corresponding to a digit.
+This report describes the classification of handwritten digits using two different models:
+a naive Bayes classifier and a convolutional neural network~(CNN).
+The MNIST~(Modified National Institute of Standards and Technology) data set,
+widely recognized in machine learning research,
+serves as the basis for this analysis.
+The data set has been provided as grayscale images of handwritten digits,
+each represented as a 28#sym.times\28 pixel NumPy array.
+Each image is labeled with a digit from 0 to 9,
+corresponding to ten output classes.
+The data set has also been pre-partitioned into training, validation, and testing subsets.
 
-= Examining the Provided Code and Data
+= Examining the Given Code and Data
 
-Several source code and data files were provided by the assignment.
-We have the following data files:
+The assignment provides several data and source code files.
+The data files are as follows:
 
 - `x_train.npy`
 
@@ -114,46 +115,39 @@ We have the following data files:
 
 - `y_test.npy`
 
-Each file is a binary file storing a NumPy array.
-Files with the `x` prefix contain image data for the handwritten digits.
-Each `x` array has the following shape: `(n, 28, 28)`,
-where `n` is the number of images in the array —
-`n` differs for `x_train`, `x_val` and `x_test`
-as they each have a different number of images.
-The second and third dimensions (both with size `28`)
-represent the pixels.
-Each pixel's value ranges from 0 to 255.
+Each data file is a binary file containing a NumPy array.
+Files prefixed with `x` store image data,
+where each array has shape `(n, 28, 28)`,
+with `n` representing the number of images.
+The second and third dimensions of the shape represent the image's pixels
+for a total of 784 (28 by 28) pixels.
+Each pixel value ranges from 0 to 255.
+Each `x` file has a corresponding `y` file containing the labels
+as a one-dimensional array with values ranging from `0` to `9`.
 
-Each `x` file has a corresponding `y` file
-containing the labels for the images.
-For example, `y_train` contains the image labels for `x_train`.
-Each `y` array is one-dimensional and contains the same number of
-values as there are images in its corresponding `x` array.
-The values range from `0` to `9` to represent the digits.
+The data set is divided into three pairs of `x` and `y` files:
+`train`, `val`, and `test`.
+The `train` set is used for model training
+while the `test` set is for the final performance evaluation of the models.
+The `val` set is supposedly for validation and hyperparameter tuning.
 
-There are three different `x`-`y` pairs of files: `train`, `val` and `test`.
-The `train` pair is meant to be fed to the classifiers for _training_.
-On the other hand, the `val` pair is for _validation_ —
-that is, for estimating the generalisation performance of the classifiers.
-The validation set can also be used as part of hyperparameter tuning.
-Finally, the `test` pair is for evaluating the performance of the final trained classifiers.
+The provided source code files are:
 
-We have the following source code files:
+- `main.py`: Entry point providing a command-line interface for training and testing classifiers.
 
-- `main.py`: Provides a commandline interface that lets the user train and test the classifiers with various parameters.
+- `naive_bayes.py`: Incomplete implementation of a naive Bayes classifier.
 
-- `naive_bayes.py`: Provides an incomplete implementation of a naive Bayes classifier.
+- `alt_model.py:` Incomplete implementation of a PyTorch module for the neural network classifier.
 
-- `alt_model.py`: Provides an incomplete implementation of a PyTorch module.
+- `nb_data_loader.py`: Contains the `NBDataLoader` class for loading data files and retrieving the train, validation, and test subsets.
 
-- `nb_data_loader.py`: Provides the `NBDataLoader` class, which loads the data files described before and allows callers to retrieve the train, validation and test subsets of the image data.
+- `alt_data_loader.py`: Contains the `ALTDataLoader` class, a subclass of PyTorch's `Dataset` class for reading image data subsets.
+  Unfortunately, the name `ALTDataLoader` is a misnomer
+  --- PyTorch also provides a `DataLoader` class intended as a wrapper over a `Dataset` to provide batching and shuffling.
+  Although `ALTDataLoader` includes `DataLoader` in its name,
+  it subclasses `Dataset`, not `DataLoader`.
 
-- `alt_data_loader.py`: Provides the `ALTDataLoader` class, a subclass of PyTorch's `Dataset` that reads either the train, validation or test image data depending on what the user specifies.
-  Unfortunately, the class is poorly named —
-  PyTorch provides the `DataLoader` and `Dataset` classes for handling data.
-  Although `ALTDataLoader` is a `Dataset`, it is _not_ a `DataLoader`.
-
-- `analysis.py`: Loads the various data subsets, displays their shapes and visualises one of the images with `matplotlib`.
+- `analysis.py`: Loads data subsets, displays their shapes, and visualizes images using `matplotlib`.
 
 = Methodology
 
@@ -173,30 +167,32 @@ The given NumPy arrays have the following shapes:
 
 - `y_test`: `(10000,)`
 
-That is, we have 48,000 samples in our train set,
-12,000 samples in our validation set
-and 10,000 samples in our test set
+We observe that there are 48,000 samples in the training set,
+12,000 samples in the validation set
+and 10,000 samples in the test set
 for a total of 70,000 samples.
 
-To get a feel of what the data looks like,
-the first 25 samples from the train set were visualised
-and are shown in @fig-image-samples.
+To begin,
+we examine the first 25 samples from the training set
+by visualizing them in @fig-image-samples.
 
 #figure(
-  caption: [Visualisation of the first 25 samples from the train set],
+  caption: [Visualisation of the first 25 samples from the training set],
   image("graphics/image-samples.png")
 ) <fig-image-samples>
 
-A first observation we can make is that the first image has
+A first observation is that the first image has
 a small artefact near the bottom right.
 It is not unreasonable to imagine that other images
-could have similar noisy artefacts.
-However, the majority do not seem to contain such artefacts.
+could have similar noise.
+Although the majority of the images do not seem to contain such artefacts,
+it is an observation to keep in mind.
 
-A second observation is that most pixels are either completely black (`0`) or completely white (`255`).
-It appears that pixels whose values fall in-between
-are a result of anti-aliasing.
-Indeed, if we plot a histogram for each of the 784 pixel values (@fig-pixel-dists),
+A second observation is that most pixels are either almost completely black (`0`) or white (`255`)
+--- there are not many pixels that fall in-between.
+Pixels whose values fall in-between
+appear to be a result of anti-aliasing.
+Indeed, if we stack the histograms for each of the 784 pixel values~(@fig-pixel-dists),
 we see that the pixels are roughly binary in nature
 with a bimodal distribution.
 
@@ -207,132 +203,118 @@ with a bimodal distribution.
 
 Finally, we can surmise that not all pixels are significant for recognising digits.
 The first pixel in the top left corner, for example, is black for most,
-if not all, images and, hence, does not contribute much to the identifying each digit.
-Ergo, dimensionality reduction techniques will be useful.
-Specifically, principal component analysis (PCA) was applied
-to the data set for the naive Bayes classifier (see @sec-naive-bayes).
+if not all, images and, hence, does not contribute much to identifying each digit.
+We can thus conclude that dimensionality reduction techniques may be useful.
 
 == Choice of Classifiers
 
 === Naive Bayes <sec-naive-bayes>
 
-There are several variants of naive Bayes classifiers to choose from.
-For example, we can use a Bernoulli naive Bayes classifier,
-which handles binary input features —
-we would have to convert the grayscale images to binary images
-through, for example, thresholding.
-While this is a viable approach,
-a Bernoulli naive Bayes classifier
-(or any other naive Bayes classifier for that matter)
-assumes that the input features (in this case, the pixel values) are independent,
-which is almost certainly not the case.
-Moreover, we lose the ability to apply dimensionality reduction techniques
-that would not preserve the binary nature of the input features
-(e.g., principal component analysis).
+There are several variants of naive Bayes classifiers to consider.
+For instance, a Bernoulli naive Bayes classifier processes binary input features,
+necessitating the conversion of grayscale images to binary images
+via, for example, thresholding.
+Although feasible, a Bernoulli naive Bayes classifier
+(or any other type of naive Bayes classifier for that matter)
+assumes independence among input features~(pixels),
+which is typically not valid.
+Moreover, this method precludes the application of dimensionality reduction techniques
+like Principal Component Analysis~(PCA) that do not preserve binary input features.
 
-Instead, a Gaussian naive Bayes classifier was implemented,
-with principal component analysis (PCA)
-as a preprocessing step.
-Gaussian naive Bayes classifiers assume their (continuous) input features
-are normally distributed.
-The probability of a specific input feature value given a class
-can then be estimated
-by approximating the input feature's distribution (conditional on the class)
-with a Gaussian distribution
-and calculating the probability density for the value.
-From @fig-pixel-dists, however, we know that the pixel values
-are _not_ normally distributed, and, hence,
-we can expect that a Gaussian naive Bayes classifier would likely perform poorly.
-If, however, we apply PCA to the data set,
-we observe that the resulting features are mostly normally distributed (@fig-pca-dists).
-Assuming the resulting features retain the underlying patterns of the data set,
-we can expect a Gaussian naive Bayes classifier to perform well.
+Instead, a Gaussian naive Bayes classifier was implemented with PCA as a preprocessing step.
+Gaussian naive Bayes classifiers assume the continuous input features are normally distributed.
+The probability of a specific feature value given a class is estimated by
+modeling the feature's distribution with a Gaussian distribution
+and computing the probability density.
+
+Despite pixel values not being normally distributed~(@fig-pixel-dists),
+PCA transformation yields features that are mostly normally distributed~(@fig-pca-dists).
+If these transformed features retain the data set's underlying patterns,
+we can expect the Gaussian naive Bayes classifier to perform well.
 
 #figure(
-  caption: [Histograms for each value of the data set projected onto the 1st principal components (using 49 components)],
+  caption: [Histograms for each value of the training data set projected onto the 1st principal components (using 49 components)],
   image("graphics/pca-distributions.png")
 ) <fig-pca-dists>
 
 === Neural Network
 
 For the neural network model,
-we also have several types of neural networks to choose from,
-such as multilayer perceptrons, recurrent neural networks and convolutional neural networks.
-Since convolutional neural networks (CNNs) use convolutional filters
-to learn local patterns of images,
-they seem to be an obvious choice for our task
-of classifying images of handwritten digits.
-Multilayer perceptrons could have been used as well,
-but they most likely would not perform as well
-since they do not take advantage of the spatial nature of images.
-On the other hand, recurrent neural networks are useful
-when the data comes in sequences,
-which is not the case for our task.
+several architectures were considered,
+including multilayer perceptrons~(MLPs),
+recurrent neural networks~(RNNs)
+and convolutional neural networks~(CNNs).
+Given that CNNs utilize convolutional filters to learn local patterns in images,
+they are an obvious, optimal choice for classifying handwritten digits.
+While MLPs could be employed,
+they are likely less effective due to their inability to
+exploit the spatial structure of images.
+RNNs, suited for sequential data, are not appropriate for this task.
 
-Now that we've chosen our type of neural network,
-we still need to consider several questions,
-like how many layers to use,
-the size of the convolutional kernels,
-the size of pooling filters,
-etc.
-Such hyperparameters were tuned using hyperparameter tuning (see @sec-hyperparameter-tuning).
-However, the general architecture of the CNN is fixed as follows:
+Having selected a CNN,
+several architectural decisions remain,
+such as the number of layers, convolutional kernel sizes and pooling filter sizes.
+These hyperparameters were tuned via hyperparameter tuning~(see @sec-hyperparameter-tuning).
+The general architecture of the CNN is outlined as follows:
 
-- The input images are fed to a set of convolutional layers.
-  Each convolutional layer's output is fed to an activation function (which is also determined through hyperparameter tuning).
-  before being fed to a dropout layer as a form of regularisation.
++ Input images are processed through a series of convolutional layers.
+  Each layer's output is passed through an activation function
+  and then through a dropout layer for regularization.
 
-- After the input has been propagated through the convolutional layers,
-  it goes through a pooling layer.
-  In typical scenarios, pooling is done after each convolutional layer.
-  However, because our images have (relatively) small dimensions of 28 by 28 pixels,
-  pooling after each convolutional layer would
-  reduce the dimensions of the images too quickly,
-  leading to a loss of too much information,
-  and, in some cases, 0-dimensional images.
-  Hence, pooling is done only after all convolutional layers.
++ Following the convolutional layers,
+  the data undergoes pooling.
+  Typically, pooling occurs after each convolutional layer.
+  However, given the relatively small dimensions of 28#sym.times\28 pixels,
+  pooling after each convolutional layer would excessively reduce the image size,
+  leading to significant information loss or 0-dimensional images.
+  Thus, pooling is performed only after all convolutional layers.
 
-- After pooling, the data is flattened before passing through a set of linear layers.
-  The last linear layer has 10 outputs corresonding to each of the 10 possible digits.
-  Each output represents a score, where a higher score represents that the image is more likely to be the digit that the output represents.
-  Thus, the last linear layer represents the final prediction of the model.
++ Post-pooling, the data is flattened and passed through a series of linear layers.
+  Similar to the convolutional layers,
+  each linear layer's output, except the final layer,
+  is passed through an activation function
+  and then through a dropout layer for regularization.
+  The final linear layer has 10 outputs, each corresponding to a digit (`0`--`9`).
+  These outputs represent scores that constitute the model's final prediction.
+  Higher scores indicate a higher likelihood that the image corresponds to the respective digit.
 
-== Cross-Validation
+== Performance Estimation
 
-Cross-validation was performed to estimate the performance
-of the classifiers before the actual training and testing.
-Performing cross-validation is crucial for several reasons:
+Cross-validation was performed to estimate the classifiers' performance before final training and testing.
+This step is critical for several reasons:
 
-- Getting an unbiased estimate of the classifiers' performance.
+- Providing an unbiased estimate of the classifiers' performance.
 
-- Verifying that the classifiers were not overfitting or underfitting the training data.
+- Ensuring that the training and hyperparameter tuning procedures
+  provide satisfactory results without overfitting or underfitting the models.
 
-- Tuning hyperparameters.
+- Determining whether the training and hyperparameter tuning procedures
+  need to be amended.
 
-The performance of the classifiers was estimated using nested stratified $k$-fold cross-validation with $k = 5$
-for both the outer and inner cross-validation loops.
-The inner fold is for hyperparameter tuning,
-whose procedure is described in @sec-hyperparameter-tuning.
-Only 25 trials was used for hyperparameter tuning during cross-validation due to the infeasible running time.
+The performance estimation uses nested stratified $k$-fold cross-validation,
+with $k = 5$ for both the outer and inner loops.
+The inner loop focuses on hyperparameter tuning
+(see @sec-hyperparameter-tuning for the procedure),
+with only 25 trials due to time constraints.
+The outer loop estimates the generalized performance of the models.
+Each iteration trains the model on 4 of the 5 folds
+and evaluates it on the remaining fold.
 
-The performance of the methodology for training the naive Bayes classifier was estimated by calculating:
-(a)~the mean of the accuracies against the outer train folds and
-(b)~the mean of the accuracies against the outer validation folds.
-Similarly, the performance of that for the neural network was estimated
-by calculating the above two metrics, in addition to:
-(a)~the mean loss against the outer train folds and
-(b)~the mean loss against the outer validation folds.
-The rationale for calculating metrics for both the train and validation folds
-is so that we can determine if the training procedures tend to underfit or overfit
-the models against the training data.
+The performance of the naive Bayes classifier was evaluated by calculating:
+(a)~mean accuracy on the outer train folds and
+(b)~mean accuracy on the outer validation folds.
+For the neural network, additional metrics were used:
+(a)~mean loss on the outer train folds and
+(b)~mean loss on the outer validation folds.
+These metrics help assess if the training procedures result in underfitting or overfitting.
 
-Results of cross-validation for the naive Bayes classifier are shown below:
+Results for the naive Bayes classifier are as follows:
 
 - Mean train accuracy: 87.4%
 
 - Mean validation accuracy: 87.2%
 
-Results for the neural network are shown below:
+For the neural network:
 
 - Mean train loss: 0.0128
 
@@ -342,12 +324,12 @@ Results for the neural network are shown below:
 
 - Mean validation accuracy: 98.9%
 
-Since the metrics for the training and validation folds
-are similar,
-we can conclude that the models are neither underfitting nor overfitting.
+The similarity in metrics for the train and validation folds suggests that
+the models are neither underfitting nor overfitting.
+Additionally, the mean accuracies pass the minimum threshold of 80%.
+We can expect the final evaluation on the test set to have similar results.
 
-Logs for the cross-validation process can be found in the following files,
-which were compressed using gzip:
+Cross-validation logs are available in the following gzip-compressed files:
 
 - `run_logs/cv_nb.log.gz`
 
@@ -355,23 +337,29 @@ which were compressed using gzip:
 
 === Hyperparameter Tuning <sec-hyperparameter-tuning>
 
-Hyperparameter tuning was performed using the #link("https://optuna.org/")[Optuna] library for both the naive Bayes classifier and the convolutional neural network.
+Hyperparameter tuning was performed using the #link("https://optuna.org/")[Optuna] library for both the naive Bayes classifier and the CNN.
 Instead of using sampling algorithms like grid search (slow)
-and random search (not guaranteed to give good parameters),
-the tuning was done using Optuna's default tree-structured Parzen estimator algorithm.
+and random search (suboptimal),
+Optuna's default tree-structured Parzen estimator algorithm was used.
 
-Unlike cross-validation, the hyperparameter tuning procedure
-was performed over 100 trials for both models.
+Hyperparameter tuning
+was conducted for 100 trials for both models.
+Each trial selects a set of parameters
+to initialise the model with,
+using stratified $k$-fold cross-validation
+with $k = 5$
+to estimate the model's performance
+with that set of parameters.
 For the naive Bayes classifier,
 hyperparameters were tuned to maximise the mean validation accuracy
-over 5 folds.
-For the neural network,
+over the folds.
+For the CNN,
 hyperparameters were tuned to minimise the mean validation loss
-over 5 folds.
+over the folds.
 
 The following hyperparameters were tuned for the naive Bayes classifier:
 
-- The number of components for principal component analysis (PCA)
+- The number of components for principal component analysis~(PCA)
 
 - The type of multiclass classification grouping to use (none, one vs. one, or one vs. rest)
 
@@ -385,17 +373,17 @@ The following hyperparameters were tuned for the neural network model:
 
 - The learning rate
 
-- The optimiser algorithm (Adam, Adadelta, stochastic gradient descent, or asynchronous stochastic gradient descent)
+- The optimiser algorithm (Adam, Adadelta, stochastic gradient descent or asynchronous stochastic gradient descent)
 
-- The scheduler (exponential, or reduce learning rate on plateau)
+- The scheduler (exponential or reduction of learning rate on plateau)
 
-  - If exponential, a gamma value is also tuned
+  - If using an exponential scheduler, a gamma value is also tuned
 
   - If reducing the learning rate on plateau, the factor by which the learning rate is reduced is also tuned
 
 - The activation function for each inner layer (ReLU, sigmoid, softplus, SELU or leaky ReLU)
 
-  - If leaky ReLU, the negative slope is also tuned
+  - If using leaky ReLU, the negative slope is also tuned
 
 - The number of convolutional layers
 
@@ -405,41 +393,29 @@ The following hyperparameters were tuned for the neural network model:
 
 - The kernel size for pooling
 
-- The dropout probability for convolutional layers
+- The dropout probability for units in a convolutional layer
 
-- The dropout probability for linear layers
+- The dropout probability for units in a linear layer
 
 - The number of output features for each linear layer (except the last, whose number of outputs is fixed to 10)
-
-Logs (compressed with gzip) for hyperparameter tuning can be found in:
-
- - `tune_nb.log.gz`
-
- - `tune_nn.log.gz`
-
-The following files are the Optuna journal files, which keep track of information for each trial:
-
-- `nb_journal.log`
-
-- `nn_journal.log`
 
 The best parameters for the naive Bayes classifier achieved a mean validation accuracy of 87.3%:
 
 - Number of PCA components: 67
 
-- Multiclass grouping: none
+- Multiclass classification grouping: none
 
-- Smoothing factor: 0.23584673798488343
+- Laplace smoothing factor: 0.23584673798488343
 
 The best parameters for the neural network achieved a mean validation loss of 0.026529311973722845:
 
-- Batch_size: 64
+- Batch size: 64
 
-- Epochs: 15
+- Number of epochs: 15
 
 - Learning rate: 0.845073619862434
 
-- Optimizer: Adadelta
+- Optimiser algorithm: Adadelta
 
 - Scheduler: exponential
 
@@ -461,9 +437,9 @@ The best parameters for the neural network achieved a mean validation loss of 0.
 
   - Kernel size for layer 2: 4
 
-- Pool kernel size: 3
+- Kernel size for pooling: 3
 
-- Dropout probability for convolutional layers: 0.27438816607290456
+- Dropout probability for units in a convolutional layer: 0.27438816607290456
 
 - Number of linear layers: 2
 
@@ -471,7 +447,20 @@ The best parameters for the neural network achieved a mean validation loss of 0.
 
   - Number of output features for linear layer 1: 10 (fixed)
 
-- Dropout probability for linear layers: 0.23955112992546726
+- Dropout probability for units in a linear layer: 0.23955112992546726
+
+The following files are the Optuna journal files, which keep track of information for each trial:
+
+- `nb_journal.log`
+
+- `nn_journal.log`
+
+Logs (compressed with gzip) for hyperparameter tuning can be found in:
+
+ - `tune_nb.log.gz`
+
+ - `tune_nn.log.gz`
+
 
 = Evaluation Results and Discussion
 
