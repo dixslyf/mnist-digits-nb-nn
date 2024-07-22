@@ -536,6 +536,54 @@ when considering all classes.
 
 == Naive Bayes
 
+The evaluation scores and confusion matrix for the naive Bayes classifier
+are shown in @fig-nb-scores and @fig-nb-confusion respectively.
+We observe an accuracy of 88.2%,
+which is similar to the estimated accuracy from @sec-performance-estimation.
+Additionally, the macro averages for precision, recall and F1-score
+are also 88.2%.
+The weighted averages are similar to the macro averages
+--- this is expected since the distribution of the digits are close to uniform.
+For a classifier that assumes conditional independence of the input features,
+this is a decent result.
+
+Classes `0` and `1` have the highest precision and recall (and, hence, F1-score),
+indicating that the classifer performs well on these digits.
+Indeed, looking at the confusion matrix,
+we see relatively few misclassifications
+
+On the other hand, the rest of the digits have varying scores.
+In particular, the model only has an F1-score of 82.4% for class `5`.
+Looking at the precision and recall for `5`,
+we see a precision of 80% and a recall of 85%,
+meaning that
+85% of the actual `5`s were correctly identified,
+and, when the model predicts a digit as `5`,
+it is correct 80% of the time.
+From the confusion matrix,
+we see that the model tends to incorrectly predict a `5` as a `3`,
+and sometimes as an `8`.
+The converse is also true --- it tends to incorrectly predict `3`s and `8`s as `5`s.
+In fact, the model also appears to incorrectly predict `3`s as `8`s
+and vice versa.
+We can conclude that the classifier struggles to distinguish between
+`5`, `3` and `8`.
+
+Interestingly, class `7` has a relatively high precision of 91.9%,
+but a recall of only 84.4%.
+That is, there are relatively few false positives
+but a high number of false negatives for `7`.
+Looking at the confusion matrix,
+`7` tends to be misclassified as a `9` or `2`.
+It also gets misclassified as `4` and `1` to a lesser extent.
+Similarly, images incorrectly predicted as `7` are usually actually a `9` or `2`,
+but the extent of this is not as great as misclassifying `7` images,
+agreeing with the precision and recall scores.
+
+Overall, based on the F1-score for each class,
+the order of the digits the model performs from best to worst
+is: `1`, `0`, `6`, `7`, `4`, `3`, `9`, `2`, `8`, `5`.
+
 #let nb-scores = json("data/test_nb.json")
 #[
 #show table.cell.where(x: 0): set text(style: "italic")
@@ -543,13 +591,13 @@ when considering all classes.
 #figure(
   caption: [Evaluation scores for the naive Bayes classifier],
   table-scores(nb-scores),
-)
+) <fig-nb-scores>
 ]
 
 #figure(
   caption: [Confusion matrix for the naive Bayes classifier],
   image("graphics/confusion-matrix-nb.png"),
-)
+) <fig-nb-confusion>
 
 == Neural Network
 
