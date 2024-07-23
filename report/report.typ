@@ -136,6 +136,8 @@ The provided source code files are:
 - `main.py`: Entry point providing a command-line interface for training and testing classifiers.
 
 - `naive_bayes.py`: Incomplete implementation of a naive Bayes classifier.
+  The `__init__()` function accepts a Laplace smoothing parameter
+  to prevent 0 probabilities.
 
 - `alt_model.py:` Incomplete implementation of a PyTorch module for the neural network classifier.
 
