@@ -290,10 +290,7 @@ def make_parser() -> argparse.ArgumentParser:
         default=0,
     )
 
-    parser = argparse.ArgumentParser(
-        prog="assignment",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
+    parser = argparse.ArgumentParser(prog="assignment")
 
     subparsers = parser.add_subparsers(
         help="the subcommand to run", dest="subcommand", required=True
@@ -311,7 +308,11 @@ def make_parser() -> argparse.ArgumentParser:
     tune_parser = subparsers.add_parser("tune")
     init_tune_parser(tune_parser, base_parser)
 
-    analyse_parser = subparsers.add_parser("analyse", parents=[base_parser])
+    analyse_parser = subparsers.add_parser(
+        "analyse",
+        parents=[base_parser],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     init_analyse_parser(analyse_parser)
 
     return parser
