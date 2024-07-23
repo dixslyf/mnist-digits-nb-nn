@@ -601,6 +601,33 @@ is: `1`, `0`, `6`, `7`, `4`, `3`, `9`, `2`, `8`, `5`.
 
 == Neural Network
 
+The CNN achieved a mean loss of 0.02130503880043543.
+The evaluation scores and confusion matrix for the CNN
+are shown in @fig-nb-scores and @fig-nb-confusion respectively.
+The CNN performed with a high accuracy of 99.3%,
+which is similar to the estimated accuracy from @sec-performance-estimation.
+Additionally, the model also performed with 99.3% for the macro and weighted averages
+of precision, recall and F1-score.
+As explained in the results for the naive Bayes model,
+the weighted and macro averages are expected to be similar
+since the distribution of the digits are close to uniform.
+It is clear that the CNN outperforms the naive Bayes classifier.
+
+Looking at the precision and recall for the individual classes,
+we see that they are all around 99%.
+In other words, whenever the CNN predicts a digit,
+it is almost always right;
+and nearly every digit is classified correctly.
+Indeed, if we look at the confusion matrix,
+there are extremely little misclassifications.
+Out of the digits, `9` has the highest number of misclassifications~(16 misclassifications),
+which agrees with the fact that it has the lowest F1-score.
+In total, there are 66 misclassifications out of the 10,000 images.
+
+Overall, based on the F1-score for each class,
+the order of the digits the model performs from best to worst
+is: `1`, `2`, `0`, `4`, `3`, `8`, `6`, `7`, `5`, `9`.
+
 #let nn-scores = json("data/test_nn.json")
 #[
 #show table.cell.where(x: 0): set text(style: "italic")
@@ -610,8 +637,6 @@ is: `1`, `0`, `6`, `7`, `4`, `3`, `9`, `2`, `8`, `5`.
   table-scores(nn-scores),
 )
 ]
-
-Mean loss: 0.02130503880043543
 
 #figure(
   caption: [Confusion matrix for the neural network],
