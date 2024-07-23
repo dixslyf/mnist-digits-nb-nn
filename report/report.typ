@@ -643,4 +643,43 @@ is: `1`, `2`, `0`, `4`, `3`, `8`, `6`, `7`, `5`, `9`.
   image("graphics/confusion-matrix-nn.png"),
 )
 
+= Discussion
+
+It is clear that the CNN greatly outperforms the naive Bayes classifier
+---
+every metric calculated for the CNN is higher than those for the naive Bayes classifier.
+This result is expected for two reasons:
+
++ CNNs are highly suitable for image data.
+
++ Naive Bayes classifiers assume conditional independence of the input features given the class,
+  which is almost certainly not the case for the pixels of the handwritten digit images.
+
+It is surprising, however, that the naive Bayes classifier could still achieve
+decent scores
+despite its assumptions,
+considering the pixels of the images should be highly correlated.
+
+Although the methodology used in this experiment is comprehensive
+and follows the typical procedure for machine learning,
+there are several improvements that can have been made.
+For example, we could have tried other dimensionality reduction techniques
+besides PCA,
+such as feature selection and t-distributed stochastic neighbor embedding~(t-SNE),
+for the Gaussian naive Bayes classifier.
+Furthermore, we could also have compared the performance of a Bernoulli naive Bayes classifier
+against the Gaussian naive Bayes classifier.
+The selection of these techniques can be achieved through hyperparameter tuning,
+and can potentially lead to better results for the naive Bayes classifier.
+
+For the CNN,
+although many hyperparameters were tuned,
+the overall structure of the CNN is still rather rigid.
+For example, dropout is always applied for regularisation
+even though other similar techniques exist,
+such as batch normalisation.
+Although an extensive set of hyperparameters was considered,
+there are still many architectural decisions left unexplored,
+such as the use of vision transformers instead of CNNs.
+
 = User Guide
