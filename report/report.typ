@@ -493,7 +493,7 @@ the following metrics were calculated:
 
 - F1-score
 
-- Support (number of correctly classified samples)
+- Support (number of samples of the class in the test data set)
 
 Precision, recall, F1-score and support metrics were computed for each class.
 Additionally, macro and weighted averages of these metrics were determined.
