@@ -485,6 +485,8 @@ the naive Bayes classifier to `nb.pkl` and the CNN to `nn.pt`.
 Training of the naive Bayes classifier was performed without
 acceleration from a graphical process unit~(GPU) and took 2.03 seconds.
 The CNN was trained with GPU acceleration via CUDA and took 93.52 seconds.
+This significantly longer training time compared to the naive Bayes classifier is expected
+since CNNs are much more complex and have much more parameters to tune.
 Logs for training can be found in `train_nb.log.gz` and `train_nn.log.gz`.
 
 For the final evaluation, the models were deserialized and evaluated on the test set.
@@ -535,6 +537,11 @@ However, no micro averages were calculated as they are equivalent to accuracy wh
 
 The naive Bayes classifier took 0.36 seconds (again, without GPU acceleration) to make predictions for the test set
 whereas the CNN took 3.35 seconds (with GPU acceleration via CUDA).
+The longer prediction time for the CNN is expected
+since CNNs have many more calculations to compute
+due to their more complex architecture
+compared to the naive Bayes classifier,
+despite using GPU acceleration
 The raw output metrics for testing can be found in `test_nb.json` and `test_nn.json`.
 
 = Evaluation Results and Discussion
