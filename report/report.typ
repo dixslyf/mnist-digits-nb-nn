@@ -480,6 +480,10 @@ The Naive Bayes classifier and CNN were trained using the optimal hyperparameter
 Training was conducted on the training subset (`x_train.npy` and `y_train.npy`).
 Post-training, the models were serialized and saved to disk:
 the naive Bayes classifier to `nb.pkl` and the CNN to `nn.pt`.
+Training of the naive Bayes classifier was performed without
+acceleration from a graphical process unit~(GPU) and took 2.03 seconds.
+The CNN was trained with GPU acceleration via CUDA and took 93.52 seconds.
+Logs for training can be found in `train_nb.log.gz` and `train_nn.log.gz`.
 
 For the final evaluation, the models were deserialized and evaluated on the test set.
 In addition to generating a confusion matrix,
@@ -493,12 +497,43 @@ the following metrics were calculated:
 
 - F1-score
 
-- Support (number of samples of the class in the test data set)
+- Support
 
-Precision, recall, F1-score and support metrics were computed for each class.
+A confusion matrix is a table that shows the counts of
+true positive, true negative, false positive, and false negative predictions
+for each class.
+Each row represents the actual class,
+while each column represents the predicted class,
+helping to visualize where the model correctly or incorrectly classified each instance.
+
+Precision measures the percentage of correctly classified samples for a class
+out of the total number of samples predicted as that class.
+For example, a precision of 80% for class `0` means that,
+out of the samples predicted `0`,
+80% were actually `0`.
+On the other hand, recall measures the percentage of correctly classified samples for a class
+out of the total number of samples that truly belong to that class.
+For example, a recall of 80% for class `0` means that,
+out of the truly `0` samples,
+80% were predicted correctly.
+F1-score is calculated as $frac(2 dot.c "precision" dot.c "recall", "precision" + "recall")$
+and represents the harmonic mean of the precision and recall.
+We can hence interpret the F1-score as an average of the precision and recall.
+Support is the number of true samples of a class in the test data set.
+
+Precision, recall, F1-score and support were computed for each class.
 Additionally, macro and weighted averages of these metrics were determined.
-Micro averages were not calculated as they are equivalent to accuracy
-when considering all classes.
+A macro averages calculates a metric independently for each class
+and then takes the mean, treating all classes equally.
+A weighted average accounts for the number of instances in each class when averaging the metrics,
+balancing the influence of each class based on its support.
+A micro average aggregates the contributions of all classes 
+by considering the total true positives, false positives, and false negatives across all classes.
+However, no micro averages were calculated as they are equivalent to accuracy when considering all classes.
+
+The naive Bayes classifier took 0.36 seconds (again, without GPU acceleration) to make predictions for the test set
+whereas the CNN took 3.35 seconds (with GPU acceleration via CUDA).
+The raw output metrics for testing can be found in `test_nb.json` and `test_nn.json`.
 
 = Evaluation Results and Discussion
 
