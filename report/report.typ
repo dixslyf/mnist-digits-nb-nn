@@ -32,7 +32,7 @@
   it
 }
 
-#set figure(placement: none)
+#set figure(placement: auto)
 
 #set block(above: 1.5em)
 
@@ -228,17 +228,18 @@ To begin,
 we examine the first 25 samples from the training set
 by visualizing them in @fig-image-samples.
 
-#figure(
-  caption: [Visualisation of the first 25 samples from the training set],
-  image("graphics/image-samples.png")
-) <fig-image-samples>
-
 A first observation is that the first image has
 a small artefact near the bottom right.
 It is not unreasonable to imagine that other images
 could have similar noise.
 Although the majority of the images do not seem to contain such artefacts,
 it is an observation to keep in mind.
+
+#figure(
+  caption: [Visualisation of the first 25 samples from the training set],
+  image("graphics/image-samples.png")
+) <fig-image-samples>
+
 
 A second observation is that most pixels are either almost completely black (`0`) or white (`255`)
 --- there are not many pixels that fall in-between.
@@ -647,10 +648,25 @@ The weighted averages are similar to the macro averages
 For a classifier that assumes conditional independence of the input features,
 this is a decent result.
 
+#let nb-scores = json("data/test_nb.json")
+#[
+#show table.cell.where(x: 0): set text(style: "italic")
+#show figure: set block(breakable: false)
+#figure(
+  caption: [Evaluation scores for the naive Bayes classifier],
+  table-scores(nb-scores),
+) <fig-nb-scores>
+]
+
+#figure(
+  caption: [Confusion matrix for the naive Bayes classifier],
+  image("graphics/confusion-matrix-nb.png"),
+) <fig-nb-confusion>
+
 Classes `0` and `1` have the highest precision and recall (and, hence, F1-score),
 indicating that the classifer performs well on these digits.
 Indeed, looking at the confusion matrix,
-we see relatively few misclassifications
+we see relatively few misclassifications.
 
 On the other hand, the rest of the digits have varying scores.
 In particular, the model only has an F1-score of 82.4% for class `5`.
@@ -684,26 +700,27 @@ Overall, based on the F1-score for each class,
 the order of the digits the model performs from best to worst
 is: `1`, `0`, `6`, `7`, `4`, `3`, `9`, `2`, `8`, `5`.
 
-#let nb-scores = json("data/test_nb.json")
+== Neural Network
+
+#let nn-scores = json("data/test_nn.json")
 #[
 #show table.cell.where(x: 0): set text(style: "italic")
 #show figure: set block(breakable: false)
 #figure(
-  caption: [Evaluation scores for the naive Bayes classifier],
-  table-scores(nb-scores),
-) <fig-nb-scores>
+  caption: [Evaluation scores for the neural network],
+  placement: bottom,
+  table-scores(nn-scores),
+) <fig-nn-scores>
 ]
 
 #figure(
-  caption: [Confusion matrix for the naive Bayes classifier],
-  image("graphics/confusion-matrix-nb.png"),
-) <fig-nb-confusion>
-
-== Neural Network
+  caption: [Confusion matrix for the neural network],
+  image("graphics/confusion-matrix-nn.png"),
+) <fig-nn-confusion>
 
 The CNN achieved a mean loss of 0.02130503880043543.
 The evaluation scores and confusion matrix for the CNN
-are shown in @fig-nb-scores and @fig-nb-confusion respectively.
+are shown in @fig-nn-scores and @fig-nn-confusion respectively.
 The CNN performed with a high accuracy of 99.3%,
 which is similar to the estimated accuracy from @sec-performance-estimation.
 Additionally, the model also performed with 99.3% for the macro and weighted averages
@@ -727,21 +744,6 @@ In total, there are 66 misclassifications out of the 10,000 images.
 Overall, based on the F1-score for each class,
 the order of the digits the model performs from best to worst
 is: `1`, `2`, `0`, `4`, `3`, `8`, `6`, `7`, `5`, `9`.
-
-#let nn-scores = json("data/test_nn.json")
-#[
-#show table.cell.where(x: 0): set text(style: "italic")
-#show figure: set block(breakable: false)
-#figure(
-  caption: [Evaluation scores for the neural network],
-  table-scores(nn-scores),
-)
-]
-
-#figure(
-  caption: [Confusion matrix for the neural network],
-  image("graphics/confusion-matrix-nn.png"),
-)
 
 = Discussion
 
