@@ -153,7 +153,7 @@ The provided source code files are:
 
 = Methodology
 
-== Data Exploration
+== Data Exploration <sec-data-exploration>
 
 The given NumPy arrays have the following shapes:
 
@@ -347,7 +347,7 @@ Cross-validation logs are available in the following gzip-compressed files:
 
 - `run_logs/cv_nn.log.gz`
 
-=== Hyperparameter Tuning <sec-hyperparameter-tuning>
+== Hyperparameter Tuning <sec-hyperparameter-tuning>
 
 Hyperparameter tuning was performed using the #link("https://optuna.org/")[Optuna] library for both the naive Bayes classifier and the CNN.
 Instead of using sampling algorithms like grid search (slow)
@@ -476,7 +476,7 @@ Logs (compressed with gzip) for hyperparameter tuning can be found in:
 
  - `tune_nn.log.gz`
 
-== Training and Testing
+== Training and Testing <sec-training-testing>
 
 The Naive Bayes classifier and CNN were trained using the optimal hyperparameters identified through tuning.
 Training was conducted on the training subset (`x_train.npy` and `y_train.npy`).
@@ -531,7 +531,7 @@ A macro averages calculates a metric independently for each class
 and then takes the mean, treating all classes equally.
 A weighted average accounts for the number of instances in each class when averaging the metrics,
 balancing the influence of each class based on its support.
-A micro average aggregates the contributions of all classes 
+A micro average aggregates the contributions of all classes
 by considering the total true positives, false positives, and false negatives across all classes.
 However, no micro averages were calculated as they are equivalent to accuracy when considering all classes.
 
@@ -727,3 +727,293 @@ there are still many architectural decisions left unexplored,
 such as the use of vision transformers instead of CNNs.
 
 = User Guide
+
+== Running Locally
+
+*Note:* I recommend running the program on Kaggle instead~(see @sec-running-on-kaggle)
+to take advantage of their graphical processing units~(GPUs).
+Setting up CUDA or ROCm for a local machine (if you have a compatible GPU)
+is, unfortunately, finicky when using Poetry on Windows.
+
+Ensure you have the following requirements:
+
+- Python `^3.11`
+
+- Poetry `^1.7.1`
+
+If the program does not work on Python `3.12`,
+fall back to `3.11` as that was the version the program was tested on locally.
+To install Poetry, follow the instructions #link("https://python-poetry.org/docs/#installation")[here].
+
+To run the program,
+run the following in your shell
+in the root directory of the project (i.e., the directory containing `pyproject.toml`):
+
+```bash
+  $ poetry install
+  $ poetry run python -m assignment
+```
+
+Alternatively, you may run `poetry shell` after `poetry install`
+to avoid having to type `poetry run`:
+
+```bash
+  $ poetry install
+  $ poetry shell
+  $ python -m assignment
+```
+
+It is also possible to run the program without using `poetry`.
+However, you would have to manually install the packages
+listed in `pyproject.toml` using `pip` or your package manager of choice.
+Alternatively, you may want to try an Anaconda distribution
+as it supposedly sets up GPU acceleration automatically;
+however, this is not guaranteed to work since the package versions may differ
+from the ones used in this project.
+
+== Running on Kaggle <sec-running-on-kaggle>
+
+It is also possible to run the program on Kaggle.
+In fact, the longer stages of the methodology
+were performed on Kaggle.
+Follow the following steps:
+
+#[
+#set enum(indent: LIST_INDENT, numbering: "1.")
+
+1. Create and name a new _dataset_, using the assignment zip file as the source.
+   We'll refer to this dataset as the `ict202-assignment-2` dataset.
+   The trick here is that we are importing the entire set of code and data files as a dataset
+   so that we can manually execute the code using shell commands
+   from a Kaggle notebook.
+
+2. Create a new notebook.
+
+3. In the notebook, add the `ict202-assignment-2` dataset as an input (under the _Input_ section in the pane on the right).
+
+4. Create a new code cell in the notebook that executes a shell command using the `!` prefix.
+   The cell should first use `cd` to change the directory to the directory of the `ict202-assignment-2` dataset input.
+   You can retrieve the directory of the `ict202-assignment-2` dataset input
+   by hovering over its entry in the _Input_ section of the right pane
+   and clicking the copy icon.
+
+   Then, using `&&` to chain another command,
+   run `python -m assignment <subcommand> <options>`,
+   replacing `<subcommand>` with a subcommand
+   and `<options>` with a list of command line options.
+
+   If you are performing training (which will save the model),
+   due to file permissions on Kaggle,
+   you must set the output file path to one with `/kaggle/working/` as a prefix.
+
+   As an example, if you want to train the neural network model,
+   the cell should contain contents similar to the following:
+
+   ```
+   !cd "/kaggle/input/ict202-assignment-2" && python -m assignment train nn -o "/kaggle/working/nn.pt"
+   ```
+
+  "`/kaggle/input/ict202-assignment-2`" should be replaced with the
+  path of the `ict202-assignment-2` dataset that was copied earlier.
+]
+
+Note, however, that the steps above do not use the package versions pinned by Poetry.
+Instead, they use the packages installed on Kaggle's machines.
+Although the program will most likely run fine,
+there is no 100% guarantee that it will (the pain of Python packaging).
+
+== Usage
+
+The interface of the program is significantly different from the provided code.
+First, there is only one executable program.
+The program expects the first argument to be one of the following subcommands:
+
+- `analyse`: Performs data exploration tasks~(corresponds to @sec-data-exploration).
+
+- `cv`: Performs cross-validation~(corresponds to @sec-performance-estimation).
+
+- `tune`: Performs hyperparameter tuning~(corresponds to @sec-hyperparameter-tuning).
+
+- `train`: Performs model training~(corresponds to @sec-training-testing).
+
+- `test`: Performs model testing~(corresponds to @sec-training-testing).
+
+Note that optional flags (i.e., those starting with a `-`) *must* be specified after the last positional argument
+(positional arguments are required arguments that do not start with "`-`").
+For example, do _not_ do this:
+
+```bash
+  $ python -m assignment -o "/kaggle/working/nn.pt" train nn
+```
+
+Instead, do:
+
+```bash
+  $ python -m assignment train nn -o "/kaggle/working/nn.pt"
+```
+
+Each subcommand has its own set of argument and options
+that you can view using the `-h` or `--help` flag.
+
+There are 2 optional global flags:
+
+- `-d --data-dir`: Specifies the directory to read the data set from. Defaults to `data/digitdata`.
+
+- `-r --random-state`: Specifies the random state to use for stochastic processes to have deterministic output. Defaults to `0`.
+
+=== `analyse`
+
+`analyse` takes one positional argument specifying what type of analysis to perform:
+
+- `shapes`: View the shape of each provided NumPy array.
+
+- `samples`: Visualize the first 25 images.
+
+- `pixel-distributions`: Visualize the distribution of each pixel value in a histogram (@fig-pixel-dists).
+
+- `pca-distributions`:  Visualize the distribution of each PCA component when using 49 components (@fig-pca-dists).
+
+Examples:
+
+```bash
+  $ python -m assignment analyse shapes
+  $ python -m assignment analyse pca-distributions
+```
+
+=== `cv`
+
+The `cv` subcommand estimates the performance of each model as described in @sec-performance-estimation.
+`cv` expects one positional argument specifing which model to estimate the performance of: `nb` or `nn`.
+The following optional flags can be specified:
+
+- `-o OUTER_FOLDS, --outer-folds OUTER_FOLDS`: the number of outer folds (default: 5) to use for nested cross-validation.
+
+- `-i INNER_FOLDS, --inner-folds INNER_FOLDS`: the number of inner folds (default: 5) to use for nested cross-validation.
+
+- `-t TRIALS, --trials TRIALS`: the number of Optuna trials for hyperparameter tuning (default: 25)
+
+- `-j JOBS, --jobs JOBS`: the number of parallel jobs to run on processors (default: 1)
+
+Additionally, when `nn` is specified, the following optional flag can also be set:
+
+- `-g {auto,cpu,cuda,mps}, --device {auto,cpu,cuda,mps}`: the compute device to use for neural network operations (default: `auto`).
+
+Note that `cv` will take a long time to run (several hours)
+with the default parameters.
+You can specify a lower number of outer folds, inner folds and trials to
+speed up the process,
+at the expense of much less accurate approximations of the performance.
+
+If more than 1 job is used,
+note that the results will not be deterministic.
+
+*Warning:* I do not recommend lowering the number of trials below 25
+because it is possible for Optuna to fail.
+Optuna has been configured to perform trial pruning,
+by which trials producing a hyperparameter set that
+does not appear to perform well
+(e.g., based on the non-convergence of loss)
+are skipped.
+If the number of trials is too low,
+it is possible for all trials to be pruned,
+leading to no completed trials and an error.
+
+Examples:
+
+```bash
+  $ python -m assignment cv nb -o 3 -i 3 -j 2
+  $ python -m assignment cv nn -o 3 -i 3 -g cpu
+```
+
+=== `tune`
+
+`tune` performs hyperparameter tuning.
+Like `cv`, the first positional argument specifies the model whose hyperparameters to tune: `nb` or `nn`.
+The following optional flags can be specified:
+- `-m {tune,view-best,view-all}, --mode {tune,view-best,view-all}`:
+  the mode to run in (`tune`, `view-best` or `view-all`) (default: `view-best`)
+
+- `-t TRIALS, --trials TRIALS`:
+  the number of trials for hyperparameter tuning (default: 25)
+
+- `-f FOLDS, --folds FOLDS`:
+  the number of folds for $k$-fold cross-validation (default: 5)
+
+- `-j JOBS, --jobs JOBS`: the number of parallel jobs (default: 1)
+
+- `-l JOURNAL_PATH, --journal-path JOURNAL_PATH`:
+  the path to the Optuna journal to load and view tuned parameters (default: `nb_journal.log` for `nb` and `nn_journal.log` for `nn`)
+
+- `-n STUDY_NAME, --study-name STUDY_NAME`:
+  the name of the Optuna study to load from the journal (default: `nb-study` for `nb` and `nn-study` for `nn`)
+
+As before, if `nn` is specified, the compute device can be set:
+
+- `-g {auto,cpu,cuda,mps}, --device {auto,cpu,cuda,mps}`:
+  the device to use for neural network operations (default: `auto`)
+
+Examples:
+
+```bash
+  # Tune the hyperparameters for the naive Bayes classifier
+  # with 50 trials and 10 folds.
+  # Note that this will append the results to
+  # the journal and study if they exist.
+  $ python -m assignment tune nb -m tune -t 50 -f 10
+
+  # Fetch the best hyperparameters for the naive Bayes classifier.
+  # You can only fetch after the hyperparameters have been tuned
+  # (e.g., through the previous commmand).
+  $ python -m assignment tune nb
+
+  # Fetch all tested hyperparameters for the naive Bayes classifier.
+  # You can only fetch after the hyperparameters have been tuned.
+  $ python -m assignment tune nb -m view-all
+
+```
+
+=== `train`
+
+`train` performs training on the training set and saves the trained model to a file.
+The first positional argument specifies the model to train: `nb` or `nn`.
+The following optional flags can be specified:
+
+- `-o OUTPUT_PATH, --output-path OUTPUT_PATH:`
+  the file path to save the trained model to (default: `nb.pkl` for `nb` and `nn.pt` for `nn`)
+
+If training the neural network (`nn`), the following additional flags can be specified:
+
+- `-g {auto,cpu,cuda,mps}, --device {auto,cpu,cuda,mps}`:
+  the device to use for neural network operations (default: `auto`)
+
+- `-b BATCH_SIZE, --batch-size BATCH_SIZE`:
+  override for the number of samples in each batch (default: None)
+
+- `-e EPOCHS, --epochs EPOCHS`:
+  override for the number of epochs to train the model for (default: None)
+
+- `-l LEARNING_RATE, --learning-rate LEARNING_RATE`:
+  override for the learning rate (default: None)
+
+By default, the batch size, number of epochs and learning rate used
+are those determined through hyperparameter tuning.
+However, you can override them using their respective override options.
+
+=== `test`
+
+The `test` subcommand evaluates a trained model on the test set.
+As with most other subcommands,
+the first positional argument specifies the model to evaluate.
+The following optional flags can be specified:
+
+- `-i INPUT_PATH, --input-path INPUT_PATH`:
+  the file path to load the trained model from (default: `nb.pkl` for `nb` and `nn.pt` for `nn`)
+
+If testing the neural network (`nn`),
+the following option is also available:
+
+- `-g {auto,cpu,cuda,mps}, --device {auto,cpu,cuda,mps}`:
+  the device to use for neural network operations (default: `auto`)
+
+Results are printed to the standard output stream.
+A figure is plotted for the confusion matrix using `matplotlib`.
