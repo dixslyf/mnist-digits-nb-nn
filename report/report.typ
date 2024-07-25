@@ -85,18 +85,68 @@
 
 #outline(indent: auto)
 
-= Problem Description
+= Problem Description <sec-problem-description>
 
 This report describes the classification of handwritten digits using two different models:
 a naive Bayes classifier and a convolutional neural network~(CNN).
-The MNIST~(Modified National Institute of Standards and Technology) data set,
-widely recognized in machine learning research,
-serves as the basis for this analysis.
 The data set has been provided as grayscale images of handwritten digits,
 each represented as a 28#sym.times\28 pixel NumPy array.
 Each image is labeled with a digit from 0 to 9,
 corresponding to ten output classes.
 The data set has also been pre-partitioned into training, validation, and testing subsets.
+
+The data set appears to be the MNIST~(Modified National Institute of Standards and Technology) data set of handwritten digits @lecun_mnist_2012,
+which is widely recognized in machine learning research as a benchmark data set.
+Researchers have since applied various machine learning algorithms against the data set.
+@lecun_mnist_2012 provides rankings of various works from up to 2012
+(such as @lecun_gradient-based_1998 and @ciresan_deep_2010)
+based on the test error rate.
+
+@lecun_gradient-based_1998 demonstrated that reliance on automatic learning techniques
+can significantly enhance the performance of document recognition systems,
+especially in handwriting recognition tasks.
+The authors proposed graph transformer networks (GTNs),
+which utilise convolutional neural networks (CNNs) to automatically extract relevant features from pixel images,
+eliminating the need for hand-crafted feature extractors and improving accuracy.
+For comparison,
+the authors tested various other classifiers besides CNN-based models,
+including linear classifiers,
+support vector machines~(SVMs),
+$K$-nearest neighbours
+and non-convolutional neural networks.
+Their results indicate that CNNs outperformed these other methods
+with lower error rates.
+
+Rather than focus on complex architectures and algorithms,
+@ciresan_deep_2010 investigates the applicability of plain multilayer perceptrons~(MLP)
+with backward propagation
+to the MNIST data set.
+Interestingly, the authors were able to achieve state-of-the-art performance
+with an error rate of 0.35%.
+Although the number of parameters in their MLPs was on the order of millions,
+they prevent the MLPs from overfitting by
+deforming training images after each epoch
+to create an essentially infinite number of training samples.
+In a similar vein, @hasanpour_lets_2016 evaluates a relatively simple CNN with 13 layers, 3#sym.times\3 convolutional kernels and 2#sym.times\2 poolling kernels
+against other more complex architectures like ResNet and GoogleNet.
+Despite the simple architecture,
+when evaluated on the MNIST data set,
+their CNN architecture achieved a near-state-of-the-art error rate of 0.25%,
+beating several other heavier architectures,
+even on other data sets.
+
+On another tangent, @pedamonti_comparison_2018 investigates
+the impact of different activation functions
+and methods for weight initialisation.
+In addition to the sigmoid function,
+the author assesses the rectified linear unit~(ReLU) activation function
+and its variants, such as leaky ReLU, exponential linear units (ELU) and scaled exponential linear units (SELU).
+Although unclear, the author appears to evaluate their influence on multilayer perceptrons~(MLPs) with varying learning rate and number of layers
+on the MNIST data set.
+Their results indicate ReLU and its variants always have higher accuracies than the sigmoid function.
+Furthermore, ELU generally gives better performance than the other ReLU variants.
+Lastly, the author observes that deeper and more complex networks
+tend to be more sensitive to the way their weights are initialised.
 
 = Examining the Given Code and Data
 
@@ -247,11 +297,17 @@ including multilayer perceptrons~(MLPs),
 recurrent neural networks~(RNNs)
 and convolutional neural networks~(CNNs).
 Given that CNNs utilize convolutional filters to learn local patterns in images,
-they are an obvious, optimal choice for classifying handwritten digits.
+they are an obvious choice for classifying handwritten digits.
+Additionally,
+the reviewed literature in @sec-problem-description
+suggests that CNNs can easily achieve state-of-the-art performance.
 While MLPs could be employed,
 they are likely less effective due to their inability to
-exploit the spatial structure of images.
-RNNs, suited for sequential data, are not appropriate for this task.
+exploit the spatial structure of images
+and would require an extreme number of parameters to perform well,
+as described in @ciresan_deep_2010.
+RNNs are most likely not well-suited for this task
+due to their affinity with sequential data.
 
 Having selected a CNN,
 several architectural decisions remain,
@@ -1017,3 +1073,5 @@ the following option is also available:
 
 Results are printed to the standard output stream.
 A figure is plotted for the confusion matrix using `matplotlib`.
+
+#bibliography("references.bib")
