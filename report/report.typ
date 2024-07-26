@@ -212,7 +212,7 @@ The provided source code files are:
 - `analysis.py`: Loads data subsets, displays their shapes, and visualizes images using `matplotlib`.
 
 However, the structure of the source code has been completely refactored and no longer resembles the above.
-Instead, we have the following source code files:
+Instead, we have the following source code files under the `assignment/` directory:
 
 - `__main__.py`: Entry point of the program.
 
