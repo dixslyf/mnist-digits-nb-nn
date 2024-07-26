@@ -98,11 +98,11 @@ The data set has also been pre-partitioned into training, validation, and testin
 The data set appears to be the MNIST~(Modified National Institute of Standards and Technology) data set of handwritten digits @lecun_mnist_2012,
 which is widely recognized in machine learning research as a benchmark data set.
 Researchers have since applied various machine learning algorithms against the data set.
-@lecun_mnist_2012 provides rankings of various works from up to 2012
+@lecun_mnist_2012 provides rankings of the performance of various works from up to 2012 against the data set
 (such as @lecun_gradient-based_1998 and @ciresan_deep_2010)
 based on the test error rate.
 
-@lecun_gradient-based_1998 demonstrated that reliance on automatic learning techniques
+One of the earlier works @lecun_gradient-based_1998 demonstrated that reliance on automatic learning techniques
 can significantly enhance the performance of document recognition systems,
 especially in handwriting recognition tasks.
 The authors proposed graph transformer networks (GTNs),
@@ -114,7 +114,7 @@ including linear classifiers,
 support vector machines~(SVMs),
 $K$-nearest neighbours
 and non-convolutional neural networks.
-Their results indicate that CNNs outperformed these other methods
+Their results indicate that CNNs outperformed these other methods,
 with lower error rates.
 
 Rather than focus on complex architectures and algorithms,
@@ -135,18 +135,28 @@ their CNN architecture achieved a near-state-of-the-art error rate of 0.25%,
 beating several other heavier architectures,
 even on other data sets.
 
-On another tangent, @pedamonti_comparison_2018 investigates
+On a different tangent, @pedamonti_comparison_2018 investigates
 the impact of different activation functions
-and methods for weight initialisation.
+and methods for weight initialisation for neural networks.
 In addition to the sigmoid function,
 the author assesses the rectified linear unit~(ReLU) activation function
 and its variants, such as leaky ReLU, exponential linear units (ELU) and scaled exponential linear units (SELU).
-Although unclear, the author appears to evaluate their influence on multilayer perceptrons~(MLPs) with varying learning rate and number of layers
+Although unclear, the author appears to evaluate their influence on multilayer perceptrons~(MLPs) with varying learning rates and number of layers
 on the MNIST data set.
 Their results indicate ReLU and its variants always have higher accuracies than the sigmoid function.
 Furthermore, ELU generally gives better performance than the other ReLU variants.
 Lastly, the author observes that deeper and more complex networks
 tend to be more sensitive to the way their weights are initialised.
+
+The discussed works suggest that CNNs are an optimal choice for
+classifying the images in the MNIST data set.
+However, the CNNs tend to be fairly complex with numerous layers and units.
+On the other hand,
+there does not appear to be many works that evaluate naive Bayes classifiers
+on the data set.
+This project thus aims to explore the application of naive Bayes classifiers
+and simple CNN architectures
+to the MNIST data set.
 
 = Examining the Given Code and Data
 
@@ -201,6 +211,39 @@ The provided source code files are:
 
 - `analysis.py`: Loads data subsets, displays their shapes, and visualizes images using `matplotlib`.
 
+However, the structure of the source code has been completely refactored and no longer resembles the above.
+Instead, we have the following source code files:
+
+- `__main__.py`: Entry point of the program.
+
+- `analysis.py`: Contains code for analysing various aspects of the data set.
+
+- `cli.py`: Implements the command-line interface.
+
+- `cv.py`: Contains code for estimating the performance of the models via cross-validation.
+
+- `data_loaders.py`: Contains code for loading the data set.
+
+- `test.py`: Contains code for evaluating the models on the test set.
+
+- `train.py`: Contains code for training the models on the training set.
+
+- `models/__init__.py`: Module marker for `models`.
+
+- `models/nb.py`: Contains the implementation of the naive Bayes classifier.
+
+- `models/nn.py`: Contains the implementation of the CNN.
+
+- `tune/__init__.py`: Module marker for `tune`.
+
+- `tune/nb.py`: Contains code for tuning the hyperparameters of the naive Bayes classifier.
+
+- `tune/nn.py`: Contains code for tuning the hyperparameters of the CNN.
+
+- `tune/view.py`: Contains code for viewing tuned hyperparameters.
+
+See @sec-usage for how to use the program.
+
 = Methodology
 
 == Data Exploration <sec-data-exploration>
@@ -237,7 +280,7 @@ it is an observation to keep in mind.
 
 #figure(
   caption: [Visualisation of the first 25 samples from the training set],
-  image("graphics/image-samples.png")
+  image("graphics/image-samples.png", width: 80%)
 ) <fig-image-samples>
 
 
@@ -272,7 +315,7 @@ Although feasible, a Bernoulli naive Bayes classifier
 assumes independence among input features~(pixels),
 which is typically not valid.
 Moreover, this method precludes the application of dimensionality reduction techniques
-like Principal Component Analysis~(PCA) that do not preserve binary input features.
+like principal component analysis~(PCA) that do not preserve binary input features.
 
 Instead, a Gaussian naive Bayes classifier was implemented with PCA as a preprocessing step.
 Gaussian naive Bayes classifiers assume the continuous input features are normally distributed.
@@ -280,7 +323,7 @@ The probability of a specific feature value given a class is estimated by
 modeling the feature's distribution with a Gaussian distribution
 and computing the probability density.
 
-Despite pixel values not being normally distributed~(@fig-pixel-dists),
+Despite the raw pixel values not being normally distributed~(@fig-pixel-dists),
 PCA transformation yields features that are mostly normally distributed~(@fig-pca-dists).
 If these transformed features retain the data set's underlying patterns,
 we can expect the Gaussian naive Bayes classifier to perform well.
@@ -370,11 +413,11 @@ so each trained model is still evaluated on unseen data.
 In theory, performing $k$-fold cross-validation provides a more unbiased estimate of the models' performance.
 
 The performance of the naive Bayes classifier was evaluated by calculating:
-(a)~mean accuracy on the outer train folds and
-(b)~mean accuracy on the outer validation folds.
+(a)~the mean accuracy on the outer train folds and
+(b)~the mean accuracy on the outer validation folds.
 For the neural network, additional metrics were used:
-(a)~mean loss on the outer train folds and
-(b)~mean loss on the outer validation folds.
+(a)~the mean loss on the outer train folds and
+(b)~the mean loss on the outer validation folds.
 These metrics help assess if the training procedures result in underfitting or overfitting.
 
 Results for the naive Bayes classifier are as follows:
@@ -415,7 +458,7 @@ the training and validation subsets were combined
 to form an auxiliary set (see @sec-performance-estimation for the rationale).
 
 Hyperparameter tuning
-was conducted for 100 trials for both models.
+was conducted with 100 trials for both models.
 Each trial selects a set of parameters
 to initialise the model with,
 using stratified $k$-fold cross-validation
@@ -535,7 +578,7 @@ Logs (compressed with gzip) for hyperparameter tuning can be found in:
 
 == Training and Testing <sec-training-testing>
 
-The Naive Bayes classifier and CNN were trained using the optimal hyperparameters identified through tuning.
+The naive Bayes classifier and CNN were trained using the optimal hyperparameters identified through tuning.
 Training was conducted on the training subset (`x_train.npy` and `y_train.npy`).
 Post-training, the models were serialized and saved to disk:
 the naive Bayes classifier to `nb.pkl` and the CNN to `nn.pt`.
@@ -543,7 +586,7 @@ Training of the naive Bayes classifier was performed without
 acceleration from a graphical process unit~(GPU) and took 2.03 seconds.
 The CNN was trained with GPU acceleration via CUDA and took 93.52 seconds.
 This significantly longer training time compared to the naive Bayes classifier is expected
-since CNNs are much more complex and have much more parameters to tune.
+since CNNs are much more complex and have much more parameters to adjust.
 Logs for training can be found in `train_nb.log.gz` and `train_nn.log.gz`.
 
 For the final evaluation, the models were deserialized and evaluated on the test set.
@@ -561,7 +604,7 @@ the following metrics were calculated:
 - Support
 
 A confusion matrix is a table that shows the counts of
-true positive, true negative, false positive, and false negative predictions
+true positive, true negative, false positive and false negative predictions
 for each class.
 Each row represents the actual class,
 while each column represents the predicted class,
@@ -584,7 +627,7 @@ Support is the number of true samples of a class in the test data set.
 
 Precision, recall, F1-score and support were computed for each class.
 Additionally, macro and weighted averages of these metrics were determined.
-A macro averages calculates a metric independently for each class
+A macro average calculates a metric independently for each class
 and then takes the mean, treating all classes equally.
 A weighted average accounts for the number of instances in each class when averaging the metrics,
 balancing the influence of each class based on its support.
@@ -693,7 +736,7 @@ Looking at the confusion matrix,
 `7` tends to be misclassified as a `9` or `2`.
 It also gets misclassified as `4` and `1` to a lesser extent.
 Similarly, images incorrectly predicted as `7` are usually actually a `9` or `2`,
-but the extent of this is not as great as misclassifying `7` images,
+but the extent of this is not as great as misclassifying images of `7`,
 agreeing with the precision and recall scores.
 
 Overall, based on the F1-score for each class,
@@ -724,11 +767,11 @@ are shown in @fig-nn-scores and @fig-nn-confusion respectively.
 The CNN performed with a high accuracy of 99.3%,
 which is similar to the estimated accuracy from @sec-performance-estimation.
 Additionally, the model also performed with 99.3% for the macro and weighted averages
-of precision, recall and F1-score.
+for precision, recall and F1-score.
 As explained in the results for the naive Bayes model,
 the weighted and macro averages are expected to be similar
 since the distribution of the digits are close to uniform.
-It is clear that the CNN outperforms the naive Bayes classifier.
+It is clear that the CNN significantly outperforms the naive Bayes classifier.
 
 Looking at the precision and recall for the individual classes,
 we see that they are all around 99%.
@@ -752,9 +795,9 @@ It is clear that the CNN greatly outperforms the naive Bayes classifier
 every metric calculated for the CNN is higher than those for the naive Bayes classifier.
 This result is expected for two reasons:
 
-+ CNNs are highly suitable for image data.
++ CNNs are highly suitable for image data as they use convolutional kernels.
 
-+ Naive Bayes classifiers assume conditional independence of the input features given the class,
++ Naive Bayes classifiers assume conditional independence of the input features given each class,
   which is almost certainly not the case for the pixels of the handwritten digit images.
 
 It is surprising, however, that the naive Bayes classifier could still achieve
@@ -867,8 +910,8 @@ Follow the following steps:
    As an example, if you want to train the neural network model,
    the cell should contain contents similar to the following:
 
-   ```
-   !cd "/kaggle/input/ict202-assignment-2" && python -m assignment train nn -o "/kaggle/working/nn.pt"
+   ```bash
+     !cd "/kaggle/input/ict202-assignment-2" && python -m assignment train nn -o "/kaggle/working/nn.pt"
    ```
 
   "`/kaggle/input/ict202-assignment-2`" should be replaced with the
@@ -878,9 +921,9 @@ Follow the following steps:
 Note, however, that the steps above do not use the package versions pinned by Poetry.
 Instead, they use the packages installed on Kaggle's machines.
 Although the program will most likely run fine,
-there is no 100% guarantee that it will (the pain of Python packaging).
+there is no 100% guarantee that it will due to the pain of Python packaging.
 
-== Usage
+== Usage <sec-usage>
 
 The interface of the program is significantly different from the provided code.
 First, there is only one executable program.
