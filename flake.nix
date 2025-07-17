@@ -31,14 +31,18 @@
           mkPoetryEnv
           ;
 
+        python = pkgs.python3Full;
+
         mnist-digits-nb-nn = mkPoetryApplication {
           projectDir = ./.;
           preferWheels = true;
+          inherit python;
         };
 
         mnist-digits-nb-nn-env = mkPoetryEnv {
           projectDir = ./.;
           preferWheels = true;
+          inherit python;
           editablePackageSources = {
             mnist-digits-nb-nn = ./mnist_digits_nb_nn;
           };
@@ -88,12 +92,10 @@
             watch-report
           ];
 
-          MPLBACKEND = "WebAgg";
+          MPLBACKEND = "TkAgg";
 
           # CUDA: https://discourse.nixos.org/t/installing-pytorch-into-a-virtual-python-environment/34720/2
-          LD_LIBRARY_PATH = "${
-            pkgs.lib.makeLibraryPath (with pkgs; [ libz ])
-          }:${pkgs.cudatoolkit}/lib:${pkgs.cudaPackages.cudnn}/lib:/run/opengl-driver/lib:$LD_LIBRARY_PATH";
+          LD_LIBRARY_PATH = "${pkgs.cudatoolkit}/lib:${pkgs.cudaPackages.cudnn}/lib:/run/opengl-driver/lib:$LD_LIBRARY_PATH";
 
           CUDA_PATH = "${pkgs.cudatoolkit}";
         };
