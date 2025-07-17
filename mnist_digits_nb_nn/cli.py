@@ -4,15 +4,19 @@ from typing import Final
 
 import torch
 
-import assignment.analysis
-import assignment.cv
-import assignment.test
-import assignment.train
-import assignment.tune
-from assignment.tune.nb import (DEFAULT_NB_STUDY_JOURNAL_PATH,
-                                DEFAULT_NB_STUDY_NAME)
-from assignment.tune.nn import (DEFAULT_NN_STUDY_JOURNAL_PATH,
-                                DEFAULT_NN_STUDY_NAME)
+import mnist_digits_nb_nn.analysis
+import mnist_digits_nb_nn.cv
+import mnist_digits_nb_nn.test
+import mnist_digits_nb_nn.train
+import mnist_digits_nb_nn.tune
+from mnist_digits_nb_nn.tune.nb import (
+    DEFAULT_NB_STUDY_JOURNAL_PATH,
+    DEFAULT_NB_STUDY_NAME,
+)
+from mnist_digits_nb_nn.tune.nn import (
+    DEFAULT_NN_STUDY_JOURNAL_PATH,
+    DEFAULT_NN_STUDY_NAME,
+)
 
 DATA_PATH: Final[str] = "data"
 DIGIT_DATA_PATH: Final[str] = os.path.join(DATA_PATH, "digitdata")
@@ -340,7 +344,7 @@ def run():
 
     match args.subcommand:
         case "train":
-            return assignment.train.cli_entry(
+            return mnist_digits_nb_nn.train.cli_entry(
                 model=args.model,
                 data_dir=args.data_dir,
                 output_path=args.output_path,
@@ -351,7 +355,7 @@ def run():
                 lr_override=lr_override,
             )
         case "test":
-            return assignment.test.cli_entry(
+            return mnist_digits_nb_nn.test.cli_entry(
                 model=args.model,
                 data_dir=args.data_dir,
                 input_path=args.input_path,
@@ -359,7 +363,7 @@ def run():
                 device=device,
             )
         case "cv":
-            return assignment.cv.cli_entry(
+            return mnist_digits_nb_nn.cv.cli_entry(
                 model=args.model,
                 data_dir=args.data_dir,
                 trials=args.trials,
@@ -370,7 +374,7 @@ def run():
                 device=device,
             )
         case "tune":
-            return assignment.tune.cli_entry(
+            return mnist_digits_nb_nn.tune.cli_entry(
                 model=args.model,
                 data_dir=args.data_dir,
                 mode=args.mode,
@@ -383,7 +387,7 @@ def run():
                 device=device,
             )
         case "analyse":
-            return assignment.analysis.cli_entry(
+            return mnist_digits_nb_nn.analysis.cli_entry(
                 data_dir=args.data_dir,
                 analysis=args.analysis,
                 random_state=args.random_state,

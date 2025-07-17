@@ -1,10 +1,10 @@
 import numpy as np
 import optuna
 
-import assignment.tune
-import assignment.tune.view
-from assignment.data_loaders import NBDataLoader
-from assignment.models import check_model
+import mnist_digits_nb_nn.tune
+import mnist_digits_nb_nn.tune.view
+from mnist_digits_nb_nn.data_loaders import NBDataLoader
+from mnist_digits_nb_nn.models import check_model
 
 
 def _check_args(model, mode):
@@ -41,7 +41,7 @@ def tune(
     assert y.shape == (X.shape[0],)
 
     if model == "nb":
-        assignment.tune.nb.tune_nb(
+        mnist_digits_nb_nn.tune.nb.tune_nb(
             X,
             y,
             n_trials=trials,
@@ -52,7 +52,7 @@ def tune(
             study_name=study_name,
         )
     else:
-        assignment.tune.nn.tune_nn(
+        mnist_digits_nb_nn.tune.nn.tune_nn(
             X,
             y,
             n_trials=trials,
@@ -97,10 +97,14 @@ def cli_entry(
         )
     elif mode == "view-best":
         return (
-            0 if assignment.tune.view.view_best(model, study_name, journal_path) else 1
+            0
+            if mnist_digits_nb_nn.tune.view.view_best(model, study_name, journal_path)
+            else 1
         )
     else:
         assert mode == "view-all"
         return (
-            0 if assignment.tune.view.view_all(model, study_name, journal_path) else 1
+            0
+            if mnist_digits_nb_nn.tune.view.view_all(model, study_name, journal_path)
+            else 1
         )

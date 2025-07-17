@@ -8,11 +8,11 @@ import sklearn.metrics
 import torch
 from torch.utils.data import DataLoader
 
-import assignment.tune.nb
-import assignment.tune.nn
-from assignment.data_loaders import NBDataLoader, NumpyMnistDataset
-from assignment.models import check_model
-from assignment.train import NN_PARAMS
+import mnist_digits_nb_nn.tune.nb
+import mnist_digits_nb_nn.tune.nn
+from mnist_digits_nb_nn.data_loaders import NBDataLoader, NumpyMnistDataset
+from mnist_digits_nb_nn.models import check_model
+from mnist_digits_nb_nn.train import NN_PARAMS
 
 
 def load_nb(input_path):
@@ -24,7 +24,7 @@ def load_nb(input_path):
 
 def load_nn(input_path, device):
     state_dict = torch.load(input_path, map_location=device)
-    model, _, _ = assignment.tune.nn.realise_params(NN_PARAMS)
+    model, _, _ = mnist_digits_nb_nn.tune.nn.realise_params(NN_PARAMS)
     model.load_state_dict(state_dict)
     model.to(device)
     print(f'Loaded neural network model from: "{input_path}"')

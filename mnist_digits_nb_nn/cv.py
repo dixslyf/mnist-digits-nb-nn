@@ -5,10 +5,10 @@ import torch
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import DataLoader
 
-import assignment.tune.nb
-import assignment.tune.nn
-from assignment.data_loaders import NBDataLoader, NumpyMnistDataset
-from assignment.models import check_model
+import mnist_digits_nb_nn.tune.nb
+import mnist_digits_nb_nn.tune.nn
+from mnist_digits_nb_nn.data_loaders import NBDataLoader, NumpyMnistDataset
+from mnist_digits_nb_nn.models import check_model
 
 
 def cross_validate_nb(
@@ -27,7 +27,7 @@ def cross_validate_nb(
         X_val, y_val = X[val_indices], y[val_indices]
 
         # To have more diverse results, we add the index to the random state.
-        best_params = assignment.tune.nb.tune_nb(
+        best_params = mnist_digits_nb_nn.tune.nb.tune_nb(
             X_train,
             y_train,
             n_trials=n_trials,
@@ -39,7 +39,7 @@ def cross_validate_nb(
         print(f"Outer fold {idx} best parameters: {best_params}")
 
         # Create a classifier with the current best parameters.
-        pipeline = assignment.tune.nb.realise_params(best_params, random_state)
+        pipeline = mnist_digits_nb_nn.tune.nb.realise_params(best_params, random_state)
 
         pipeline.fit(X_train, y_train)
 
@@ -154,7 +154,7 @@ def cross_validate_nn(
         train_dataset = NumpyMnistDataset(X_train, y_train)
         val_dataset = NumpyMnistDataset(X_val, y_val)
 
-        best_params = assignment.tune.nn.tune_nn(
+        best_params = mnist_digits_nb_nn.tune.nn.tune_nn(
             X_train,
             y_train,
             n_trials=n_trials,
@@ -170,7 +170,9 @@ def cross_validate_nn(
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True)
 
-        model, optimizer, scheduler = assignment.tune.nn.realise_params(best_params)
+        model, optimizer, scheduler = mnist_digits_nb_nn.tune.nn.realise_params(
+            best_params
+        )
         model.to(device)
 
         # Training loop.

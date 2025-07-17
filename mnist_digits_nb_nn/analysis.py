@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
-from assignment.data_loaders import NBDataLoader
+from mnist_digits_nb_nn.data_loaders import NBDataLoader
 
 
 def display_shapes(X_train, y_train, X_val, y_val, X_test, y_test):

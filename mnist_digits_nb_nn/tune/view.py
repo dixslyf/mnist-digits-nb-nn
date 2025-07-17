@@ -2,7 +2,7 @@ import sys
 
 import optuna
 
-from assignment.models import check_model
+from mnist_digits_nb_nn.models import check_model
 
 
 def _load_study(study_name, study_journal_path):

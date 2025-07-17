@@ -1,8 +1,8 @@
 [tool.poetry]
-name = "assignment-2"
-version = "0.1.0"
-description = ""
-authors = ["Dixon Sean Low Yan Feng <dixonseanlow@protonmail.com>"]
+name = "mnist-digits-nb-nn"
+version = "1.0.0"
+description = "A comparison of Naive Bayes and CNN models for handwritten digit classification on the MNIST dataset."
+authors = ["Dixon Sean Low Yan Feng <root@dixslyf.dev>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -16,6 +16,8 @@ matplotlib = "^3.9.1"
 scikit-image = "^0.24.0"
 optuna = "^3.6.1"
 
+[tool.poetry.scripts]
+mnist-digits-nb-nn = 'mnist_digits_nb_nn.cli:run'
 
 [build-system]
 requires = ["poetry-core"]

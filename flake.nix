@@ -4,37 +4,44 @@
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     poetry2nix-flake.url = "github:nix-community/poetry2nix";
+    typix = {
+      url = "github:loqusion/typix";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
   };
   outputs =
     {
+      self,
       nixpkgs,
-      nixpkgs-unstable,
       flake-utils,
       poetry2nix-flake,
+      typix,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        unstable-pkgs = nixpkgs-unstable.legacyPackages.${system};
+        inherit (pkgs) lib;
 
         poetry2nix = poetry2nix-flake.lib.mkPoetry2Nix { inherit pkgs; };
 
-        inherit (poetry2nix) mkPoetryEnv;
+        inherit (poetry2nix)
+          mkPoetryApplication
+          mkPoetryEnv
+          ;
 
-        overrides = poetry2nix.overrides.withDefaults (
-          _: prev: {
-            gym-notices = prev.gym-notices.overridePythonAttrs (old: {
-              buildInputs = (old.buildInputs or [ ]) ++ [ prev.setuptools ];
-            });
-          }
-        );
-
-        env = mkPoetryEnv {
+        mnist-digits-nb-nn = mkPoetryApplication {
           projectDir = ./.;
-          inherit overrides;
           preferWheels = true;
+        };
+
+        mnist-digits-nb-nn-env = mkPoetryEnv {
+          projectDir = ./.;
+          preferWheels = true;
+          editablePackageSources = {
+            mnist-digits-nb-nn = ./mnist_digits_nb_nn;
+          };
           extraPackages =
             ps: with ps; [
               tornado
@@ -49,15 +56,36 @@
               rope
             ];
         };
+
+        typixLib = typix.lib.${system};
+
+        reportBuildArgs = {
+          typstSource = "report.typ";
+          src = lib.fileset.toSource {
+            root = ./report;
+            fileset = lib.fileset.unions [
+              (lib.fileset.fromSource (typixLib.cleanTypstSource ./report))
+              ./report/graphics
+              ./report/data
+              ./report/references.bib
+            ];
+          };
+        };
+
+        report = typixLib.buildTypstProject reportBuildArgs;
+        build-report = typixLib.buildTypstProjectLocal reportBuildArgs;
+        watch-report = typixLib.watchTypstProject { typstSource = "report/report.typ"; };
       in
       {
-        devShell = pkgs.mkShell {
+        devShell = typixLib.devShell {
           packages = [
-            unstable-pkgs.typst
             pkgs.poetry
-            env
+            mnist-digits-nb-nn-env
             pkgs.cudatoolkit
             pkgs.cudaPackages.cudnn
+
+            build-report
+            watch-report
           ];
 
           MPLBACKEND = "WebAgg";
@@ -69,6 +97,43 @@
 
           CUDA_PATH = "${pkgs.cudatoolkit}";
         };
+
+        checks = {
+          inherit
+            mnist-digits-nb-nn
+            report
+            build-report
+            watch-report
+            ;
+        };
+
+        packages = {
+          inherit
+            mnist-digits-nb-nn
+            report
+            ;
+
+          default = mnist-digits-nb-nn;
+        };
+
+        apps =
+          let
+            mnist-digits-nb-nn-app = flake-utils.lib.mkApp {
+              drv = self.packages.${system}.default;
+            };
+          in
+          {
+            default = mnist-digits-nb-nn-app;
+            mnist-digits-nb-nn = mnist-digits-nb-nn-app;
+
+            build-report = flake-utils.lib.mkApp {
+              drv = build-report;
+            };
+
+            watch-report = flake-utils.lib.mkApp {
+              drv = watch-report;
+            };
+          };
       }
     );
 }

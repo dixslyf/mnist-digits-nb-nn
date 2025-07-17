@@ -5,10 +5,10 @@ from typing import Any
 import torch
 from torch.utils.data import DataLoader
 
-import assignment.tune.nb
-import assignment.tune.nn
-from assignment.data_loaders import NBDataLoader, NumpyMnistDataset
-from assignment.models import check_model
+import mnist_digits_nb_nn.tune.nb
+import mnist_digits_nb_nn.tune.nn
+from mnist_digits_nb_nn.data_loaders import NBDataLoader, NumpyMnistDataset
+from mnist_digits_nb_nn.models import check_model
 
 NB_PARAMS: dict[str, Any] = {
     "pca_n_components": 67,
@@ -41,7 +41,7 @@ NN_PARAMS: dict[str, Any] = {
 
 def create_and_train_nb(X_train, y_train, random_state):
     print(f"Parameters: {NB_PARAMS}")
-    clf = assignment.tune.nb.realise_params(NB_PARAMS, random_state)
+    clf = mnist_digits_nb_nn.tune.nb.realise_params(NB_PARAMS, random_state)
 
     start = time.time()
     clf.fit(X_train, y_train)
@@ -74,7 +74,7 @@ def create_and_train_nn(
 
     print(f"Parameters: {params}")
 
-    model, optimizer, scheduler = assignment.tune.nn.realise_params(params)
+    model, optimizer, scheduler = mnist_digits_nb_nn.tune.nn.realise_params(params)
     model.to(device)
 
     train_dataset = NumpyMnistDataset(X_train, y_train)

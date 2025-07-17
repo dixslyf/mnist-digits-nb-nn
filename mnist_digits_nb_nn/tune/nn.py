@@ -11,8 +11,8 @@ from optuna.samplers import TPESampler
 from sklearn.model_selection import StratifiedKFold
 from torch.utils.data import DataLoader
 
-from assignment.data_loaders import NumpyMnistDataset
-from assignment.models.nn import MnistNN
+from mnist_digits_nb_nn.data_loaders import NumpyMnistDataset
+from mnist_digits_nb_nn.models.nn import MnistNN
 
 DEFAULT_NN_STUDY_JOURNAL_PATH: Final[str] = "nn_journal.log"
 DEFAULT_NN_STUDY_NAME: Final[str] = "nn-study"

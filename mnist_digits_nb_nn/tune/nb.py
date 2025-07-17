@@ -12,7 +12,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.multiclass import OneVsOneClassifier, OneVsRestClassifier
 from sklearn.pipeline import FunctionTransformer, Pipeline
 
-from assignment.models.nb import NaiveBayesSk
+from mnist_digits_nb_nn.models.nb import NaiveBayesSk
 
 DEFAULT_NB_STUDY_JOURNAL_PATH: Final[str] = "nb_journal.log"
 DEFAULT_NB_STUDY_NAME: Final[str] = "nb-study"

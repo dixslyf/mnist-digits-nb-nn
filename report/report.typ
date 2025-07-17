@@ -1,4 +1,3 @@
-#import "@preview/algo:0.3.3": algo, d, i
 #import "/constants.typ": *
 #import "/lib.typ": *
 
@@ -278,10 +277,10 @@ could have similar noise.
 Although the majority of the images do not seem to contain such artefacts,
 it is an observation to keep in mind.
 
-#figure(
-  caption: [Visualisation of the first 25 samples from the training set],
-  image("graphics/image-samples.png", width: 80%)
-) <fig-image-samples>
+#figure(caption: [Visualisation of the first 25 samples from the training set], image(
+  "graphics/image-samples.png",
+  width: 80%,
+)) <fig-image-samples>
 
 
 A second observation is that most pixels are either almost completely black (`0`) or white (`255`)
@@ -292,10 +291,10 @@ Indeed, if we stack the histograms for each of the 784 pixel values~(@fig-pixel-
 we see that the pixels are roughly binary in nature
 with a bimodal distribution.
 
-#figure(
-  caption: [Stacked histogram for all pixel values],
-  image("graphics/pixel-distributions.png", width: 90%)
-) <fig-pixel-dists>
+#figure(caption: [Stacked histogram for all pixel values], image(
+  "graphics/pixel-distributions.png",
+  width: 90%,
+)) <fig-pixel-dists>
 
 Finally, we can surmise that not all pixels are significant for recognising digits.
 The first pixel in the top left corner, for example, is black for most,
@@ -330,7 +329,7 @@ we can expect the Gaussian naive Bayes classifier to perform well.
 
 #figure(
   caption: [Histograms for each value of the training data set projected onto the 1st principal components (using 49 components)],
-  image("graphics/pca-distributions.png")
+  image("graphics/pca-distributions.png"),
 ) <fig-pca-dists>
 
 === Neural Network
@@ -572,9 +571,9 @@ The following files are the Optuna journal files, which keep track of informatio
 
 Logs (compressed with gzip) for hyperparameter tuning can be found in:
 
- - `tune_nb.log.gz`
+- `tune_nb.log.gz`
 
- - `tune_nn.log.gz`
+- `tune_nn.log.gz`
 
 == Training and Testing <sec-training-testing>
 
@@ -655,27 +654,36 @@ The raw output metrics for testing can be found in `test_nb.json` and `test_nn.j
   },
   table.header(
     [],
-    ..scores
-      .at("0")
-      .keys()
-      .map(h => upper(h.at(0)) + h.slice(1))
-    ),
+    ..scores.at("0").keys().map(h => upper(h.at(0)) + h.slice(1)),
+  ),
   ..scores
     .pairs()
     .map(((key, scores)) => if key == "accuracy" {
       (
-        none, none, none, none, none,
-        key, none, none, scores, none,
+        none,
+        none,
+        none,
+        none,
+        none,
+        key,
+        none,
+        none,
+        scores,
+        none,
       )
     } else {
       (key, ..scores.values())
     })
     .flatten()
-    .map(v => if type(v) == float and v >= 0 and v <= 1.0 { [#calc.round(v * 100, digits: 1)\%] } else { v }) // Round floats.
+    .map(v => if type(v) == float and v >= 0 and v <= 1.0 { [#calc.round(v * 100, digits: 1)\%] } else {
+      v
+    }) // Round floats.
     .map(v => if type(v) == str { upper(v.at(0)) + v.slice(1) } else { v }) // Capitalise the first letter of strings.
     .map(v => if type(v) == str { v.replace(regex("avg"), "average") } else { v }) // Replace "avg" with "average".
-    .map(v => if type(v) == str and v.replace(regex("[0-9]"), "") == "" { "Class " + v } else { v }) // Append "class" to digit labels.
-    .map(v => [#v])
+    .map(v => if type(v) == str and v.replace(regex("[0-9]"), "") == "" { "Class " + v } else {
+      v
+    }) // Append "class" to digit labels.
+    .map(v => [#v]),
 )
 
 == Naive Bayes
@@ -693,18 +701,14 @@ this is a decent result.
 
 #let nb-scores = json("data/test_nb.json")
 #[
-#show table.cell.where(x: 0): set text(style: "italic")
-#show figure: set block(breakable: false)
-#figure(
-  caption: [Evaluation scores for the naive Bayes classifier],
-  table-scores(nb-scores),
-) <fig-nb-scores>
+  #show table.cell.where(x: 0): set text(style: "italic")
+  #show figure: set block(breakable: false)
+  #figure(caption: [Evaluation scores for the naive Bayes classifier], table-scores(nb-scores)) <fig-nb-scores>
 ]
 
-#figure(
-  caption: [Confusion matrix for the naive Bayes classifier],
-  image("graphics/confusion-matrix-nb.png"),
-) <fig-nb-confusion>
+#figure(caption: [Confusion matrix for the naive Bayes classifier], image(
+  "graphics/confusion-matrix-nb.png",
+)) <fig-nb-confusion>
 
 Classes `0` and `1` have the highest precision and recall (and, hence, F1-score),
 indicating that the classifer performs well on these digits.
@@ -747,19 +751,16 @@ is: `1`, `0`, `6`, `7`, `4`, `3`, `9`, `2`, `8`, `5`.
 
 #let nn-scores = json("data/test_nn.json")
 #[
-#show table.cell.where(x: 0): set text(style: "italic")
-#show figure: set block(breakable: false)
-#figure(
-  caption: [Evaluation scores for the neural network],
-  placement: bottom,
-  table-scores(nn-scores),
-) <fig-nn-scores>
+  #show table.cell.where(x: 0): set text(style: "italic")
+  #show figure: set block(breakable: false)
+  #figure(caption: [Evaluation scores for the neural network], placement: bottom, table-scores(
+    nn-scores,
+  )) <fig-nn-scores>
 ]
 
-#figure(
-  caption: [Confusion matrix for the neural network],
-  image("graphics/confusion-matrix-nn.png"),
-) <fig-nn-confusion>
+#figure(caption: [Confusion matrix for the neural network], image(
+  "graphics/confusion-matrix-nn.png",
+)) <fig-nn-confusion>
 
 The CNN achieved a mean loss of 0.02130503880043543.
 The evaluation scores and confusion matrix for the CNN
@@ -880,42 +881,42 @@ were performed on Kaggle.
 Follow the following steps:
 
 #[
-#set enum(indent: LIST_INDENT, numbering: "1.")
+  #set enum(indent: LIST_INDENT, numbering: "1.")
 
-1. Create and name a new _dataset_, using the assignment zip file as the source.
-   We'll refer to this dataset as the `ict202-assignment-2` dataset.
-   The trick here is that we are importing the entire set of code and data files as a dataset
-   so that we can manually execute the code using shell commands
-   from a Kaggle notebook.
+  1. Create and name a new _dataset_, using the assignment zip file as the source.
+    We'll refer to this dataset as the `ict202-assignment-2` dataset.
+    The trick here is that we are importing the entire set of code and data files as a dataset
+    so that we can manually execute the code using shell commands
+    from a Kaggle notebook.
 
-2. Create a new notebook.
+  2. Create a new notebook.
 
-3. In the notebook, add the `ict202-assignment-2` dataset as an input (under the _Input_ section in the pane on the right).
+  3. In the notebook, add the `ict202-assignment-2` dataset as an input (under the _Input_ section in the pane on the right).
 
-4. Create a new code cell in the notebook that executes a shell command using the `!` prefix.
-   The cell should first use `cd` to change the directory to the directory of the `ict202-assignment-2` dataset input.
-   You can retrieve the directory of the `ict202-assignment-2` dataset input
-   by hovering over its entry in the _Input_ section of the right pane
-   and clicking the copy icon.
+  4. Create a new code cell in the notebook that executes a shell command using the `!` prefix.
+    The cell should first use `cd` to change the directory to the directory of the `ict202-assignment-2` dataset input.
+    You can retrieve the directory of the `ict202-assignment-2` dataset input
+    by hovering over its entry in the _Input_ section of the right pane
+    and clicking the copy icon.
 
-   Then, using `&&` to chain another command,
-   run `python -m assignment <subcommand> <options>`,
-   replacing `<subcommand>` with a subcommand
-   and `<options>` with a list of command line options.
+    Then, using `&&` to chain another command,
+    run `python -m assignment <subcommand> <options>`,
+    replacing `<subcommand>` with a subcommand
+    and `<options>` with a list of command line options.
 
-   If you are performing training (which will save the model),
-   due to file permissions on Kaggle,
-   you must set the output file path to one with `/kaggle/working/` as a prefix.
+    If you are performing training (which will save the model),
+    due to file permissions on Kaggle,
+    you must set the output file path to one with `/kaggle/working/` as a prefix.
 
-   As an example, if you want to train the neural network model,
-   the cell should contain contents similar to the following:
+    As an example, if you want to train the neural network model,
+    the cell should contain contents similar to the following:
 
-   ```bash
-     !cd "/kaggle/input/ict202-assignment-2" && python -m assignment train nn -o "/kaggle/working/nn.pt"
-   ```
+    ```bash
+      !cd "/kaggle/input/ict202-assignment-2" && python -m assignment train nn -o "/kaggle/working/nn.pt"
+    ```
 
-  "`/kaggle/input/ict202-assignment-2`" should be replaced with the
-  path of the `ict202-assignment-2` dataset that was copied earlier.
+    "`/kaggle/input/ict202-assignment-2`" should be replaced with the
+    path of the `ict202-assignment-2` dataset that was copied earlier.
 ]
 
 Note, however, that the steps above do not use the package versions pinned by Poetry.
