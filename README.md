@@ -40,15 +40,16 @@ Then, run the following commands:
 
 ```sh
 poetry install
-poetry run python -m mnist_digits_nb_nn <subcommand>
+poetry run python -m mnist_digits_nb_nn <subcommand> <options>
 ```
 
 Alternatively, to avoid typing `poetry` repeatedly,
-you can first activate the shell:
+you can activate the shell after running `poetry install`:
 
 ```sh
+poetry install
 poetry shell
-python -m mnist_digits_nb_nn <subcommand>
+python -m mnist_digits_nb_nn <subcommand> <options>
 ```
 
 ### Nix
