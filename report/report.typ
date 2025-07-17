@@ -211,7 +211,7 @@ The provided source code files are:
 - `analysis.py`: Loads data subsets, displays their shapes, and visualizes images using `matplotlib`.
 
 However, the structure of the source code has been completely refactored and no longer resembles the above.
-Instead, we have the following source code files under the `assignment/` directory:
+Instead, we have the following source code files under the `mnist_digits_nb_nn/` directory:
 
 - `__main__.py`: Entry point of the program.
 
@@ -839,7 +839,7 @@ is, unfortunately, finicky when using Poetry on Windows.
 
 Ensure you have the following requirements:
 
-- Python `^3.11`
+- Python `^3.10`
 
 - Poetry `^1.7.1`
 
@@ -853,7 +853,7 @@ in the root directory of the project (i.e., the directory containing `pyproject.
 
 ```bash
   $ poetry install
-  $ poetry run python -m assignment
+  $ poetry run python -m mnist_digits_nb_nn
 ```
 
 Alternatively, you may run `poetry shell` after `poetry install`
@@ -862,7 +862,7 @@ to avoid having to type `poetry run`:
 ```bash
   $ poetry install
   $ poetry shell
-  $ python -m assignment
+  $ python -m mnist_digits_nb_nn
 ```
 
 It is also possible to run the program without using `poetry`.
@@ -900,7 +900,7 @@ Follow the following steps:
     and clicking the copy icon.
 
     Then, using `&&` to chain another command,
-    run `python -m assignment <subcommand> <options>`,
+    run `python -m mnist_digits_nb_nn <subcommand> <options>`,
     replacing `<subcommand>` with a subcommand
     and `<options>` with a list of command line options.
 
@@ -912,7 +912,7 @@ Follow the following steps:
     the cell should contain contents similar to the following:
 
     ```bash
-      !cd "/kaggle/input/ict202-assignment-2" && python -m assignment train nn -o "/kaggle/working/nn.pt"
+      !cd "/kaggle/input/ict202-assignment-2" && python -m mnist_digits_nb_nn train nn -o "/kaggle/working/nn.pt"
     ```
 
     "`/kaggle/input/ict202-assignment-2`" should be replaced with the
@@ -945,13 +945,13 @@ Note that optional flags (i.e., those starting with a `-`) *must* be specified a
 For example, do _not_ do this:
 
 ```bash
-  $ python -m assignment -o "/kaggle/working/nn.pt" train nn
+  $ python -m mnist_digits_nb_nn -o "/kaggle/working/nn.pt" train nn
 ```
 
 Instead, do:
 
 ```bash
-  $ python -m assignment train nn -o "/kaggle/working/nn.pt"
+  $ python -m mnist_digits_nb_nn train nn -o "/kaggle/working/nn.pt"
 ```
 
 Each subcommand has its own set of argument and options
@@ -978,8 +978,8 @@ There are 2 optional global flags:
 Examples:
 
 ```bash
-  $ python -m assignment analyse shapes
-  $ python -m assignment analyse pca-distributions
+  $ python -m mnist_digits_nb_nn analyse shapes
+  $ python -m mnist_digits_nb_nn analyse pca-distributions
 ```
 
 === `cv`
@@ -1023,8 +1023,8 @@ leading to no completed trials and an error.
 Examples:
 
 ```bash
-  $ python -m assignment cv nb -o 3 -i 3 -j 2
-  $ python -m assignment cv nn -o 3 -i 3 -g cpu
+  $ python -m mnist_digits_nb_nn cv nb -o 3 -i 3 -j 2
+  $ python -m mnist_digits_nb_nn cv nn -o 3 -i 3 -g cpu
 ```
 
 === `tune`
@@ -1061,16 +1061,16 @@ Examples:
   # with 50 trials and 10 folds.
   # Note that this will append the results to
   # the journal and study if they exist.
-  $ python -m assignment tune nb -m tune -t 50 -f 10
+  $ python -m mnist_digits_nb_nn tune nb -m tune -t 50 -f 10
 
   # Fetch the best hyperparameters for the naive Bayes classifier.
   # You can only fetch after the hyperparameters have been tuned
   # (e.g., through the previous commmand).
-  $ python -m assignment tune nb
+  $ python -m mnist_digits_nb_nn tune nb
 
   # Fetch all tested hyperparameters for the naive Bayes classifier.
   # You can only fetch after the hyperparameters have been tuned.
-  $ python -m assignment tune nb -m view-all
+  $ python -m mnist_digits_nb_nn tune nb -m view-all
 
 ```
 
